@@ -64,6 +64,60 @@ def consolidate_matrices(matrices: list[np.ndarray]) -> np.ndarray:
     G = P ** (1.0 / k)
     return G
 
+
+def calculate_homogeneity(priorities: list[dict]) -> float:
+    """
+    Bereken homogeniteit op basis van Shannon-entropie.
+    priorities = lijst van dicts met gewichten per respondent.
+    """
+    n = len(priorities)  # aantal respondenten
+    cats = list(priorities[0].keys())  # categorieën
+    catCnt = len(cats)
+
+    # Gemiddelde distributie (groep)
+    avg = {c: 0.0 for c in cats}
+    for p in priorities:
+        for c in cats:
+            avg[c] += p[c]
+    for c in cats:
+        avg[c] /= n
+
+    # Entropie van groep (gamma)
+    gamma = -sum(avg[c] * np.log(avg[c]) for c in cats if avg[c] > 0)
+
+    # Entropie van individuen (alpha)
+    alpha_sum = 0.0
+    for p in priorities:
+        alpha_sum += -sum(p[c] * np.log(p[c]) for c in cats if p[c] > 0)
+    alpha = alpha_sum / n
+
+    # Beta = verschil
+    beta = gamma - alpha
+    sim = (1. / np.exp(beta) - 1. / catCnt) / (1. - 1. / catCnt)  # schaal zoals in jouw collega’s code
+    return sim
+
+
+def calculate_consensus(priorities: list[dict]) -> float:
+    """
+    Bereken consensus via gemiddelde cosine similarity.
+    priorities = lijst van dicts met gewichten per respondent.
+    """
+    vectors = np.array([[p[c] for c in priorities[0].keys()] for p in priorities])
+    from sklearn.metrics import pairwise_distances
+    cosine_dist_matrix = pairwise_distances(vectors, metric="cosine")
+    cosine_sim_matrix = 1 - cosine_dist_matrix
+
+    # Gemiddelde off-diagonal similarity
+    total_sum = 0
+    count = 0
+    for i in range(cosine_sim_matrix.shape[0]):
+        for j in range(cosine_sim_matrix.shape[1]):
+            if i != j:
+                total_sum += cosine_sim_matrix[i, j]
+                count += 1
+    return total_sum / count if count > 0 else 0
+
+
 def safe_float(x):
     try:
         return float(x)
@@ -236,8 +290,39 @@ else:
     df_grp["Rank"] = df_grp["Weight (%)"].rank(ascending=False, method="dense").astype(int)
     st.write(df_grp)
 
-    st.metric("Group Consistency Ratio (CR)", f"{group_cr * 100:.1f}%")
+    #st.metric("Group Consistency Ratio (CR)", f"{group_cr * 100:.1f}%")
+    
+    # Bereken homogeniteit en consensus
+    priorities_list = []
+    for f in files:
+        df = pd.read_csv(os.path.join(RESP_DIR, f), index_col=0)
+        weights = weights_colmean(df.values)
+        priorities_list.append({criteria[i]: weights[i] for i in range(len(criteria))})
+    
+    homogeneity = calculate_homogeneity(priorities_list)
+    consensus = calculate_consensus(priorities_list)
+    
+    st.subheader("Groepshomogeniteit & Consensus")
+    st.metric("Homogeniteit (S)", f"{homogeneity:.3f}")
+    st.metric("Consensus (S*)", f"{consensus:.3f}")
+    
+    # Interpretatie
+    def interpret(value):
+        if value >= 0.8:
+            return "Hoog"
+        elif value >= 0.6:
+            return "Matig"
+        else:
+            return "Laag"
+    
+    st.write(f"Interpretatie homogeniteit: {interpret(homogeneity)}")
+    st.write(f"Interpretatie consensus: {interpret(consensus)}")
+    
+    st.progress(homogeneity)
+    st.progress(consensus)
 
+
+    
     # Export knoppen
     st.markdown("---")
     colA, colB, colC = st.columns(3)
