@@ -96,26 +96,38 @@ def calculate_homogeneity(priorities: list[dict]) -> float:
     sim = (1. / np.exp(beta) - 1. / catCnt) / (1. - 1. / catCnt)  # schaal zoals in jouw collega’s code
     return sim
 
+def cosine_similarity_matrix(X: np.ndarray) -> np.ndarray:
+    """
+    Bereken cosine similarity matrix zonder sklearn.
+    X: shape (n_respondenten, n_criteria)
+    """
+    # Normaliseer elke vector
+    norms = np.linalg.norm(X, axis=1, keepdims=True)
+    X_norm = X / norms
+
+    # Cosine similarity = dot product van genormaliseerde vectors
+    return X_norm @ X_norm.T
+
 
 def calculate_consensus(priorities: list[dict]) -> float:
     """
-    Bereken consensus via gemiddelde cosine similarity.
-    priorities = lijst van dicts met gewichten per respondent.
+    Bereken consensus via gemiddelde cosine similarity (zonder sklearn).
     """
-    vectors = np.array([[p[c] for c in priorities[0].keys()] for p in priorities])
-    from sklearn.metrics import pairwise_distances
-    cosine_dist_matrix = pairwise_distances(vectors, metric="cosine")
-    cosine_sim_matrix = 1 - cosine_dist_matrix
+    cats = list(priorities[0].keys())
+    vectors = np.array([[p[c] for c in cats] for p in priorities])
+
+    cosine_sim_matrix = cosine_similarity_matrix(vectors)
 
     # Gemiddelde off-diagonal similarity
-    total_sum = 0
+    total = 0.0
     count = 0
     for i in range(cosine_sim_matrix.shape[0]):
         for j in range(cosine_sim_matrix.shape[1]):
             if i != j:
-                total_sum += cosine_sim_matrix[i, j]
+                total += cosine_sim_matrix[i, j]
                 count += 1
-    return total_sum / count if count > 0 else 0
+
+    return total / count if count > 0 else 0.0
 
 
 def safe_float(x):
