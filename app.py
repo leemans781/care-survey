@@ -12,10 +12,13 @@ import numpy as np
 import pandas as pd
 from numpy.linalg import eigvals
 
-# -----------------------------
-# Config & Helpers
-# -----------------------------
+
 st.set_page_config(page_title="AHP Survey", layout="wide")
+
+# Dit zijn de default criteria die worden gebruikt, als er niks is doorgevoerd
+# Ik vind dit eigenlijk een lelijke manier van programmeren, maar weet even niks anders
+if "criteria" not in st.session_state:
+    st.session_state.criteria = ["Kosten", "Bereikbaarheid", "Duurzaamheid"]
 
 RESP_DIR = "responses"  # map waarin CSV's van deelnemers komen
 os.makedirs(RESP_DIR, exist_ok=True)
@@ -73,16 +76,13 @@ mode = st.sidebar.radio("Kies modus", ["Deelnemer (invullen)", "Admin (groepresu
 # -----------------------------
 # Criteria invoer (geldt voor beide modi)
 # -----------------------------
-st.header("AHP Pairwise Survey - versie test")
-st.caption("Vul criteria in (één per regel). Dezelfde set wordt gebruikt voor deelnemers en consolidatie.")
-
-criteria_input = st.text_area("Criteria", value="Crit-1\nCrit-2\nCrit-3")
-criteria = [c.strip() for c in criteria_input.splitlines() if c.strip()]
+st.header("AHP Pairwise Survey")
+criteria = st.session_state.criteria
 n = len(criteria)
 
-if n < 2:
-    st.warning("Voeg minimaal 2 criteria toe.")
-    st.stop()
+st.write("### Criteria")
+st.write(", ".join(criteria))
+
 
 # -----------------------------
 # DEELNEMER MODUS
@@ -163,6 +163,20 @@ else:
     if code != ADMIN_CODE:
         st.warning("Voer de juiste admin code in om groepsresultaat te zien.")
         st.stop()
+        
+    st.markdown("### Criteria instellen (alleen admin)")
+    criteria_input = st.text_area(
+        "Voer criteria in (één per regel)",
+        value="\n".join(st.session_state.criteria)
+    )
+    
+    if st.button("Criteria opslaan"):
+        new_criteria = [c.strip() for c in criteria_input.splitlines() if c.strip()]
+        if len(new_criteria) < 2:
+            st.error("Minimaal 2 criteria vereist.")
+        else:
+            st.session_state.criteria = new_criteria
+            st.success("Criteria succesvol opgeslagen!")    
 
     # Lees alle responses die overeenkomen met deze criteria-dimensie (n x n)
     files = [f for f in os.listdir(RESP_DIR) if f.endswith(".csv")]
