@@ -15,10 +15,13 @@ from numpy.linalg import eigvals
 
 st.set_page_config(page_title="AHP Survey", layout="wide")
 
-# Dit zijn de default criteria die worden gebruikt, als er niks is doorgevoerd
-# Ik vind dit eigenlijk een lelijke manier van programmeren, maar weet even niks anders
+# Dit moet ervoor zorgen dat de respondenten pas kunnen invullen, als de beheerder de criteria heeft ingevuld
+# Er valt namelijk nog niks in te vullen, als de criteria nog niet bekend zijn
 if "criteria" not in st.session_state:
-    st.session_state.criteria = ["Kosten", "Bereikbaarheid", "Duurzaamheid"]
+    st.session_state.criteria = []
+
+if "criteria_locked" not in st.session_state:
+    st.session_state.criteria_locked = False
 
 RESP_DIR = "responses"  # map waarin CSV's van deelnemers komen
 os.makedirs(RESP_DIR, exist_ok=True)
@@ -77,12 +80,17 @@ mode = st.sidebar.radio("Kies modus", ["Deelnemer (invullen)", "Admin (groepresu
 # Criteria invoer (geldt voor beide modi)
 # -----------------------------
 st.header("AHP Pairwise Survey")
+
+if not st.session_state.criteria_locked:
+    st.warning("De survey is nog niet geopend. "
+               "De beheerder stelt momenteel de criteria in.")
+    st.stop()
+
 criteria = st.session_state.criteria
 n = len(criteria)
 
 st.write("### Criteria")
 st.write(", ".join(criteria))
-
 
 # -----------------------------
 # DEELNEMER MODUS
@@ -176,7 +184,8 @@ else:
             st.error("Minimaal 2 criteria vereist.")
         else:
             st.session_state.criteria = new_criteria
-            st.success("Criteria succesvol opgeslagen!")    
+            st.session_state.criteria_locked = True
+            st.success("Criteria opgeslagen. De survey is nu geopend voor deelnemers.")    
 
     # Lees alle responses die overeenkomen met deze criteria-dimensie (n x n)
     files = [f for f in os.listdir(RESP_DIR) if f.endswith(".csv")]
