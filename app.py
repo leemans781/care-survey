@@ -79,7 +79,14 @@ mode = st.sidebar.radio("Kies modus", ["Deelnemer (invullen)", "Admin (groepresu
 # -----------------------------
 # Criteria invoer (geldt voor beide modi)
 # -----------------------------
+# st.header("AHP Pairwise Survey")
+
+criteria = st.session_state.criteria
+n = len(criteria)
+
 st.header("AHP Pairwise Survey")
+st.write("### Criteria")
+st.write(", ".join(criteria))
 
 
 # -----------------------------
@@ -91,12 +98,6 @@ if mode == "Deelnemer (invullen)":
         st.warning("De survey is nog niet geopend. "
                    "De beheerder stelt momenteel de criteria in.")
         st.stop()
-
-    criteria = st.session_state.criteria
-    n = len(criteria)
-
-    st.write("### Criteria")
-    st.write(", ".join(criteria))
     
     st.subheader("Deelnemer — pairwise vergelijkingen invullen")
 
