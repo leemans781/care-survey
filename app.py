@@ -196,12 +196,22 @@ if mode == "Deelnemer (invullen)":
                 with col2:
                     mag = st.slider("Sterkte (1 = zwak, 9 = zeer sterk)", 1, 9, 3, key=key + "_mag")
 
+                # if "≈" in side:
+                #     vals[(i, j)] = 1.0
+                # elif criteria[i] in side:  # i > j
+                #     vals[(i, j)] = float(mag)
+                # else:  # j > i
+                #     vals[(i, j)] = 1.0 / float(mag)
+                    
+                # 🔧 HIER zit oplossing 1
                 if "≈" in side:
-                    vals[(i, j)] = 1.0
-                elif criteria[i] in side:  # i > j
-                    vals[(i, j)] = float(mag)
+                    v = 1.0
+                elif side.startswith(criteria[i]):  # i > j
+                    v = float(mag)
                 else:  # j > i
-                    vals[(i, j)] = 1.0 / float(mag)
+                    v = 1.0 / float(mag)
+    
+                vals[(i, j)] = v
 
     # Volledige matrix opbouwen
     A = np.ones((n, n), dtype=float)
@@ -328,9 +338,8 @@ else:
             return "Laag"
     
     st.write(f"Interpretatie homogeniteit: {interpret(homogeneity)}")
-    st.write(f"Interpretatie consensus: {interpret(consensus)}")
-    
     st.progress(homogeneity)
+    st.write(f"Interpretatie consensus: {interpret(consensus)}")
     st.progress(consensus)
 
 
