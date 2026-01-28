@@ -15,26 +15,26 @@ from numpy.linalg import eigvals
 
 st.set_page_config(page_title="AHP Survey", layout="wide")
 
+RESP_DIR = "responses"  # map waarin CSV's van deelnemers komen
+os.makedirs(RESP_DIR, exist_ok=True)
+
+ADMIN_CODE = "secret123"
+
 # Dit moet ervoor zorgen dat de respondenten pas kunnen invullen, als de beheerder de criteria heeft ingevuld
 # Er valt namelijk nog niks in te vullen, als de criteria nog niet bekend zijn
 # Dit zelfde pas ik doe voor de alternatieven. 
 if "criteria" not in st.session_state:
     st.session_state.criteria = []
 
-if "criteria_locked" not in st.session_state:
-    st.session_state.criteria_locked = False
-    
-    
+# if "criteria_locked" not in st.session_state:
+#     st.session_state.criteria_locked = False
+       
 if "alternatives" not in st.session_state:
     st.session_state.alternatives = []
+    
+if "model_locked" not in st.session_state:
+    st.session_state.model_locked = False    
 
-if "alternatives_locked" not in st.session_state:
-    st.session_state.alternatives_locked = False    
-
-RESP_DIR = "responses"  # map waarin CSV's van deelnemers komen
-os.makedirs(RESP_DIR, exist_ok=True)
-
-ADMIN_CODE = "secret123"
 
 def weights_colmean(M: np.ndarray) -> np.ndarray:
     """Bereken AHP-gewichten via kolomnormalisatie + rijgemiddelden (som=1)."""
@@ -168,7 +168,7 @@ st.write(", ".join(criteria))
 # -----------------------------
 if mode == "Deelnemer (invullen)":
     
-    if not st.session_state.criteria_locked:
+    if not st.session_state.model_locked:
         st.warning("De survey is nog niet geopend. "
                    "De beheerder stelt momenteel de criteria in.")
         st.stop()
@@ -271,8 +271,8 @@ else:
             st.error("Minimaal 2 criteria vereist.")
         else:
             st.session_state.criteria = new_criteria
-            st.session_state.criteria_locked = True
-            st.success("Criteria opgeslagen. De survey is nu geopend voor deelnemers.")    
+            #st.session_state.criteria_locked = True
+            st.success("Criteria opgeslagen.")    
 
     # Lees alle responses die overeenkomen met deze criteria-dimensie (n x n)
     files = [f for f in os.listdir(RESP_DIR) if f.endswith(".csv")]
@@ -383,3 +383,14 @@ else:
             st.session_state.alternatives = new_alternatives
             st.session_state.alternatives_locked = True
             st.success("Alternatieven opgeslagen.")
+            
+    st.markdown("---")
+    if st.button("Survey openen (model vastzetten)"):
+        if not st.session_state.criteria or not st.session_state.alternatives:
+            st.error("Vul eerst criteria én alternatieven in.")
+        else:
+            st.session_state.criteria_locked = True
+            st.session_state.alternatives_locked = True
+            st.session_state.model_locked = True
+            st.success("Survey is geopend. Deelnemers kunnen nu invullen.")
+
