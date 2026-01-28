@@ -168,95 +168,95 @@ st.write(", ".join(criteria))
 # DEELNEMER MODUS
 # -----------------------------
 if mode == "Deelnemer (invullen)":
-    
-    # if not st.session_state.model_locked:
-    #     st.warning("De survey is nog niet geopend. "
-    #                "De beheerder stelt momenteel de criteria in.")
-    #     st.stop()
-    
+     
     if not (st.session_state.criteria_locked and st.session_state.alternatives_locked):
-        st.warning(
-            "De survey is nog niet geopend. "
-            "De beheerder stelt momenteel de criteria en alternatieven in."
-        )
+        st.warning("De survey is nog niet geopend.")
         st.stop()
 
+    tabs = st.tabs(["Criteria", "Alternatieven"])
+    with tabs[0]:
+        st.subheader("Deelnemer — pairwise vergelijkingen invullen")
     
-    st.subheader("Deelnemer — pairwise vergelijkingen invullen")
-
-    participant_name = st.text_input("Jouw naam (of e-mail)", placeholder="Naam of e-mail")
-    if not participant_name:
-        st.info("Vul je naam/e-mail in om verder te gaan.")
-        st.stop()
-
-    st.write(f"Aantal criteria: **{n}**")
-    st.markdown("---")
-
-    # Boven-driehoek invoer
-    vals = {}
-    for i in range(n):
-        for j in range(i + 1, n):
-            key = f"{criteria[i]} vs {criteria[j]}"
-            with st.container():
-                col1, col2 = st.columns([3, 2])
-                with col1:
-                    side = st.radio(
-                        key,
-                        [
-                            f"{criteria[i]} > {criteria[j]}",
-                            f"{criteria[i]} ≈ {criteria[j]}",
-                            f"{criteria[j]} > {criteria[i]}",
-                        ],
-                        index=0,
-                        horizontal=True,
-                    )
-                with col2:
-                    mag = st.slider("Sterkte (1 = zwak, 9 = zeer sterk)", 1, 9, 3, key=key + "_mag")
-
-                # if "≈" in side:
-                #     vals[(i, j)] = 1.0
-                # elif criteria[i] in side:  # i > j
-                #     vals[(i, j)] = float(mag)
-                # else:  # j > i
-                #     vals[(i, j)] = 1.0 / float(mag)
-                    
-                # 🔧 HIER zit oplossing 1
-                if "≈" in side:
-                    v = 1.0
-                elif side.startswith(criteria[i]):  # i > j
-                    v = float(mag)
-                else:  # j > i
-                    v = 1.0 / float(mag)
+        participant_name = st.text_input("Jouw naam (of e-mail)", placeholder="Naam of e-mail")
+        if not participant_name:
+            st.info("Vul je naam/e-mail in om verder te gaan.")
+            st.stop()
     
-                vals[(i, j)] = v
+        st.write(f"Aantal criteria: **{n}**")
+        st.markdown("---")
+    
+        # Boven-driehoek invoer
+        vals = {}
+        for i in range(n):
+            for j in range(i + 1, n):
+                key = f"{criteria[i]} vs {criteria[j]}"
+                with st.container():
+                    col1, col2 = st.columns([3, 2])
+                    with col1:
+                        side = st.radio(
+                            key,
+                            [
+                                f"{criteria[i]} > {criteria[j]}",
+                                f"{criteria[i]} ≈ {criteria[j]}",
+                                f"{criteria[j]} > {criteria[i]}",
+                            ],
+                            index=0,
+                            horizontal=True,
+                        )
+                    with col2:
+                        mag = st.slider("Sterkte (1 = zwak, 9 = zeer sterk)", 1, 9, 3, key=key + "_mag")
+    
+                    # if "≈" in side:
+                    #     vals[(i, j)] = 1.0
+                    # elif criteria[i] in side:  # i > j
+                    #     vals[(i, j)] = float(mag)
+                    # else:  # j > i
+                    #     vals[(i, j)] = 1.0 / float(mag)
+                        
+                    # 🔧 HIER zit oplossing 1
+                    if "≈" in side:
+                        v = 1.0
+                    elif side.startswith(criteria[i]):  # i > j
+                        v = float(mag)
+                    else:  # j > i
+                        v = 1.0 / float(mag)
+        
+                    vals[(i, j)] = v
+    
+        # Volledige matrix opbouwen
+        A = np.ones((n, n), dtype=float)
+        for (i, j), v in vals.items():
+            A[i, j] = v
+            A[j, i] = 1.0 / v
+    
+        st.write("**Jouw pairwise matrix**")
+        st.dataframe(pd.DataFrame(A, columns=criteria, index=criteria))
+    
+        # Gewichten + CR
+        w = weights_colmean(A)
+        cr = saaty_cr(A, w) if n <= 10 else alo_cr(A)
+    
+        st.subheader("Jouw prioriteiten")
+        st.write(pd.DataFrame({"Criteria": criteria, "Weight (%)": (w * 100).round(2)}))
+        st.metric("Consistency Ratio (CR)", f"{cr * 100:.1f}%")
+    
+        # Opslaan
+        st.markdown("---")
+        if st.button("Verstuur en opslaan"):
+            # Bestandsnaam veilig maken
+            safe_name = "".join(ch for ch in participant_name if ch.isalnum() or ch in ("_", "-", "."))
+            out_path = os.path.join(RESP_DIR, f"{safe_name}.csv")
+            pd.DataFrame(A, columns=criteria, index=criteria).to_csv(out_path, index=True)
+            st.success(f"Inzending opgeslagen: `{out_path}`")
+            st.info("Je kunt het tabblad sluiten. Bedankt voor het invullen!")
+        
+    with tabs[1]:
+        if not st.session_state.criteria_locked:
+            st.warning("Alternatieven kunnen pas ingevuld worden als de criteria zijn afgerond.")
+        else:
+            st.subheader("Deelnemer — alternatieven vergelijkingen invullen")
 
-    # Volledige matrix opbouwen
-    A = np.ones((n, n), dtype=float)
-    for (i, j), v in vals.items():
-        A[i, j] = v
-        A[j, i] = 1.0 / v
-
-    st.write("**Jouw pairwise matrix**")
-    st.dataframe(pd.DataFrame(A, columns=criteria, index=criteria))
-
-    # Gewichten + CR
-    w = weights_colmean(A)
-    cr = saaty_cr(A, w) if n <= 10 else alo_cr(A)
-
-    st.subheader("Jouw prioriteiten")
-    st.write(pd.DataFrame({"Criteria": criteria, "Weight (%)": (w * 100).round(2)}))
-    st.metric("Consistency Ratio (CR)", f"{cr * 100:.1f}%")
-
-    # Opslaan
-    st.markdown("---")
-    if st.button("Verstuur en opslaan"):
-        # Bestandsnaam veilig maken
-        safe_name = "".join(ch for ch in participant_name if ch.isalnum() or ch in ("_", "-", "."))
-        out_path = os.path.join(RESP_DIR, f"{safe_name}.csv")
-        pd.DataFrame(A, columns=criteria, index=criteria).to_csv(out_path, index=True)
-        st.success(f"Inzending opgeslagen: `{out_path}`")
-        st.info("Je kunt het tabblad sluiten. Bedankt voor het invullen!")
-
+    
 # -----------------------------
 # ADMIN MODUS
 # -----------------------------
