@@ -381,100 +381,105 @@ else:
         st.session_state.criteria_locked = True
         st.session_state.alternatives_locked = True
 
-
-    # Lees alle responses die overeenkomen met deze criteria-dimensie (n x n)
-    files = [f for f in os.listdir(RESP_DIR) if f.endswith(".csv")]
-    st.write(f"Gevonden inzendingen: **{len(files)}**")
-    matrices = []
-    bad_files = []
-    for f in files:
-        path = os.path.join(RESP_DIR, f)
-        try:
-            df = pd.read_csv(path, index_col=0)
-            # controle: zelfde dimensie en zelfde criteria set?
-            if df.shape != (n, n):
-                bad_files.append(f"{f} (dimensie {df.shape}, verwacht {(n,n)})")
-                continue
-            # optioneel: check index/kolomnamen gelijk aan criteria
-            # Bij afwijkende namen kun je alleen op dimensie matchen in MVP
-            A = df.values.astype(float)
-            matrices.append(A)
-        except Exception as e:
-            bad_files.append(f"{f} (error: {e})")
-
-    if bad_files:
-        st.warning("Sommige files konden niet gebruikt worden:\n- " + "\n- ".join(bad_files))
-
-    if not matrices:
-        st.info("Geen bruikbare responses gevonden in de map 'responses/'.")
-        st.stop()
-
-    # Consolidated decision matrix via AIJ
-    G = consolidate_matrices(matrices)
-    st.write("**Consolidated Decision Matrix (groep)**")
-    st.dataframe(pd.DataFrame(G, columns=criteria, index=criteria))
-
-    # Groepsgewichten + CR
-    wg = weights_colmean(G)
-    group_cr = saaty_cr(G, wg) if n <= 10 else alo_cr(G)
-
-    # Overzichtstabel
-    st.subheader("Groepsprioriteiten")
-    df_grp = pd.DataFrame({
-        "Criteria": criteria,
-        "Weight (%)": (wg * 100).round(2)
-    })
-    # Rang bepalen
-    df_grp["Rank"] = df_grp["Weight (%)"].rank(ascending=False, method="dense").astype(int)
-    st.write(df_grp)
-
-    #st.metric("Group Consistency Ratio (CR)", f"{group_cr * 100:.1f}%")
+    tabs = st.tabs(["Criteria", "Alternatieven"])
+    with tabs[0]:
+        st.subheader("Criteria — groepsresultaten")
+        # Lees alle responses die overeenkomen met deze criteria-dimensie (n x n)
+        files = [f for f in os.listdir(RESP_DIR) if f.endswith(".csv")]
+        st.write(f"Gevonden inzendingen: **{len(files)}**")
+        matrices = []
+        bad_files = []
+        for f in files:
+            path = os.path.join(RESP_DIR, f)
+            try:
+                df = pd.read_csv(path, index_col=0)
+                # controle: zelfde dimensie en zelfde criteria set?
+                if df.shape != (n, n):
+                    bad_files.append(f"{f} (dimensie {df.shape}, verwacht {(n,n)})")
+                    continue
+                # optioneel: check index/kolomnamen gelijk aan criteria
+                # Bij afwijkende namen kun je alleen op dimensie matchen in MVP
+                A = df.values.astype(float)
+                matrices.append(A)
+            except Exception as e:
+                bad_files.append(f"{f} (error: {e})")
     
-    # Bereken homogeniteit en consensus
-    priorities_list = []
-    for f in files:
-        df = pd.read_csv(os.path.join(RESP_DIR, f), index_col=0)
-        weights = weights_colmean(df.values)
-        priorities_list.append({criteria[i]: weights[i] for i in range(len(criteria))})
+        if bad_files:
+            st.warning("Sommige files konden niet gebruikt worden:\n- " + "\n- ".join(bad_files))
     
-    homogeneity = calculate_homogeneity(priorities_list)
-    consensus = calculate_consensus(priorities_list)
+        if not matrices:
+            st.info("Geen bruikbare responses gevonden in de map 'responses/'.")
+            st.stop()
     
-    st.subheader("Groepshomogeniteit & Consensus")
-    st.metric("Homogeniteit (S)", f"{homogeneity:.3f}")
-    st.metric("Consensus (S*)", f"{consensus:.3f}")
+        # Consolidated decision matrix via AIJ
+        G = consolidate_matrices(matrices)
+        st.write("**Consolidated Decision Matrix (groep)**")
+        st.dataframe(pd.DataFrame(G, columns=criteria, index=criteria))
     
-    # Interpretatie
-    def interpret(value):
-        if value >= 0.8:
-            return "Hoog"
-        elif value >= 0.6:
-            return "Matig"
-        else:
-            return "Laag"
+        # Groepsgewichten + CR
+        wg = weights_colmean(G)
+        group_cr = saaty_cr(G, wg) if n <= 10 else alo_cr(G)
     
-    st.write(f"Interpretatie homogeniteit: {interpret(homogeneity)}")
-    st.progress(homogeneity)
-    st.write(f"Interpretatie consensus: {interpret(consensus)}")
-    st.progress(consensus)
-
-    # Export knoppen
-    st.markdown("---")
-    colA, colB, colC = st.columns(3)
-    with colA:
-        # consolidated matrix download
-        cm_bytes = pd.DataFrame(G, columns=criteria, index=criteria).to_csv(index=True).encode("utf-8")
-        st.download_button("Download consolidated matrix (CSV)", cm_bytes, file_name="consolidated_matrix.csv")
-    with colB:
-        # group weights download
-        gw_bytes = df_grp.to_csv(index=False).encode("utf-8")
-        st.download_button("Download group weights (CSV)", gw_bytes, file_name="group_weights.csv")
-    with colC:
-        # log van gebruikte files
-        log_bytes = "\n".join(files).encode("utf-8")
-        st.download_button("Download list of participant files (TXT)", log_bytes, file_name="participants_used.txt")
-
-    st.caption("MVP: responses staan lokaal in de map 'responses/'. In Streamlit Cloud blijven ze bewaard zolang de app niet opnieuw wordt gedeployed. Voor productie: gebruik een database of Blob Storage.")
-
-
+        # Overzichtstabel
+        st.subheader("Groepsprioriteiten")
+        df_grp = pd.DataFrame({
+            "Criteria": criteria,
+            "Weight (%)": (wg * 100).round(2)
+        })
+        # Rang bepalen
+        df_grp["Rank"] = df_grp["Weight (%)"].rank(ascending=False, method="dense").astype(int)
+        st.write(df_grp)
     
+        #st.metric("Group Consistency Ratio (CR)", f"{group_cr * 100:.1f}%")
+        
+        # Bereken homogeniteit en consensus
+        priorities_list = []
+        for f in files:
+            df = pd.read_csv(os.path.join(RESP_DIR, f), index_col=0)
+            weights = weights_colmean(df.values)
+            priorities_list.append({criteria[i]: weights[i] for i in range(len(criteria))})
+        
+        homogeneity = calculate_homogeneity(priorities_list)
+        consensus = calculate_consensus(priorities_list)
+        
+        st.subheader("Groepshomogeniteit & Consensus")
+        st.metric("Homogeniteit (S)", f"{homogeneity:.3f}")
+        st.metric("Consensus (S*)", f"{consensus:.3f}")
+        
+        # Interpretatie
+        def interpret(value):
+            if value >= 0.8:
+                return "Hoog"
+            elif value >= 0.6:
+                return "Matig"
+            else:
+                return "Laag"
+        
+        st.write(f"Interpretatie homogeniteit: {interpret(homogeneity)}")
+        st.progress(homogeneity)
+        st.write(f"Interpretatie consensus: {interpret(consensus)}")
+        st.progress(consensus)
+    
+        # Export knoppen
+        st.markdown("---")
+        colA, colB, colC = st.columns(3)
+        with colA:
+            # consolidated matrix download
+            cm_bytes = pd.DataFrame(G, columns=criteria, index=criteria).to_csv(index=True).encode("utf-8")
+            st.download_button("Download consolidated matrix (CSV)", cm_bytes, file_name="consolidated_matrix.csv")
+        with colB:
+            # group weights download
+            gw_bytes = df_grp.to_csv(index=False).encode("utf-8")
+            st.download_button("Download group weights (CSV)", gw_bytes, file_name="group_weights.csv")
+        with colC:
+            # log van gebruikte files
+            log_bytes = "\n".join(files).encode("utf-8")
+            st.download_button("Download list of participant files (TXT)", log_bytes, file_name="participants_used.txt")
+    
+        st.caption("MVP: responses staan lokaal in de map 'responses/'. In Streamlit Cloud blijven ze bewaard zolang de app niet opnieuw wordt gedeployed. Voor productie: gebruik een database of Blob Storage.")
+    
+    with tabs[1]:
+        st.subheader("Alternatieven — groepsresultaten")
+        
+        criteria = st.session_state.criteria
+        alternatives = st.session_state.alternatives
