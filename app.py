@@ -17,11 +17,19 @@ st.set_page_config(page_title="AHP Survey", layout="wide")
 
 # Dit moet ervoor zorgen dat de respondenten pas kunnen invullen, als de beheerder de criteria heeft ingevuld
 # Er valt namelijk nog niks in te vullen, als de criteria nog niet bekend zijn
+# Dit zelfde pas ik doe voor de alternatieven. 
 if "criteria" not in st.session_state:
     st.session_state.criteria = []
 
 if "criteria_locked" not in st.session_state:
     st.session_state.criteria_locked = False
+    
+    
+if "alternatives" not in st.session_state:
+    st.session_state.alternatives = []
+
+if "alternatives_locked" not in st.session_state:
+    st.session_state.alternatives_locked = False    
 
 RESP_DIR = "responses"  # map waarin CSV's van deelnemers komen
 os.makedirs(RESP_DIR, exist_ok=True)
@@ -342,8 +350,6 @@ else:
     st.write(f"Interpretatie consensus: {interpret(consensus)}")
     st.progress(consensus)
 
-
-    
     # Export knoppen
     st.markdown("---")
     colA, colB, colC = st.columns(3)
@@ -361,3 +367,19 @@ else:
         st.download_button("Download list of participant files (TXT)", log_bytes, file_name="participants_used.txt")
 
     st.caption("MVP: responses staan lokaal in de map 'responses/'. In Streamlit Cloud blijven ze bewaard zolang de app niet opnieuw wordt gedeployed. Voor productie: gebruik een database of Blob Storage.")
+
+
+    # De volgende stap: alternatieven introduceren. 
+    st.markdown("### Alternatieven instellen (alleen admin)")
+
+    alternatives_input = st.text_area("Voer alternatieven in (één per regel)", value="\n".join(st.session_state.alternatives))
+    
+    if st.button("Alternatieven opslaan"):
+        new_alternatives = [a.strip() for a in alternatives_input.splitlines() if a.strip()]
+        
+        if len(new_alternatives) < 2:
+            st.error("Minimaal 2 alternatieven vereist.")
+        else:
+            st.session_state.alternatives = new_alternatives
+            st.session_state.alternatives_locked = True
+            st.success("Alternatieven opgeslagen.")
