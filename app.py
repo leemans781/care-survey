@@ -26,14 +26,15 @@ ADMIN_CODE = "secret123"
 if "criteria" not in st.session_state:
     st.session_state.criteria = []
 
-# if "criteria_locked" not in st.session_state:
-#     st.session_state.criteria_locked = False
+if "criteria_locked" not in st.session_state:
+    st.session_state.criteria_locked = False
        
 if "alternatives" not in st.session_state:
     st.session_state.alternatives = []
     
-if "model_locked" not in st.session_state:
-    st.session_state.model_locked = False    
+if "alternatives_locked" not in st.session_state:
+    st.session_state.alternatives_locked = False
+    
 
 
 def weights_colmean(M: np.ndarray) -> np.ndarray:
@@ -168,10 +169,18 @@ st.write(", ".join(criteria))
 # -----------------------------
 if mode == "Deelnemer (invullen)":
     
-    if not st.session_state.model_locked:
-        st.warning("De survey is nog niet geopend. "
-                   "De beheerder stelt momenteel de criteria in.")
+    # if not st.session_state.model_locked:
+    #     st.warning("De survey is nog niet geopend. "
+    #                "De beheerder stelt momenteel de criteria in.")
+    #     st.stop()
+    
+    if not (st.session_state.criteria_locked and st.session_state.alternatives_locked):
+        st.warning(
+            "De survey is nog niet geopend. "
+            "De beheerder stelt momenteel de criteria en alternatieven in."
+        )
         st.stop()
+
     
     st.subheader("Deelnemer — pairwise vergelijkingen invullen")
 
@@ -273,6 +282,28 @@ else:
             st.session_state.criteria = new_criteria
             #st.session_state.criteria_locked = True
             st.success("Criteria opgeslagen.")    
+            
+    # De volgende stap: alternatieven introduceren. 
+    st.markdown("### Alternatieven instellen (alleen admin)")
+
+    alternatives_input = st.text_area("Voer alternatieven in (één per regel)", value="\n".join(st.session_state.alternatives))
+    
+    if st.button("Alternatieven opslaan"):
+        new_alternatives = [a.strip() for a in alternatives_input.splitlines() if a.strip()]
+        
+        if len(new_alternatives) < 2:
+            st.error("Minimaal 2 alternatieven vereist.")
+        else:
+            st.session_state.alternatives = new_alternatives
+            st.success("Alternatieven opgeslagen.")
+            
+    if (
+        len(st.session_state.criteria) >= 2
+        and len(st.session_state.alternatives) >= 2
+    ):
+        st.session_state.criteria_locked = True
+        st.session_state.alternatives_locked = True
+
 
     # Lees alle responses die overeenkomen met deze criteria-dimensie (n x n)
     files = [f for f in os.listdir(RESP_DIR) if f.endswith(".csv")]
@@ -369,28 +400,4 @@ else:
     st.caption("MVP: responses staan lokaal in de map 'responses/'. In Streamlit Cloud blijven ze bewaard zolang de app niet opnieuw wordt gedeployed. Voor productie: gebruik een database of Blob Storage.")
 
 
-    # De volgende stap: alternatieven introduceren. 
-    st.markdown("### Alternatieven instellen (alleen admin)")
-
-    alternatives_input = st.text_area("Voer alternatieven in (één per regel)", value="\n".join(st.session_state.alternatives))
     
-    if st.button("Alternatieven opslaan"):
-        new_alternatives = [a.strip() for a in alternatives_input.splitlines() if a.strip()]
-        
-        if len(new_alternatives) < 2:
-            st.error("Minimaal 2 alternatieven vereist.")
-        else:
-            st.session_state.alternatives = new_alternatives
-            st.session_state.alternatives_locked = True
-            st.success("Alternatieven opgeslagen.")
-            
-    st.markdown("---")
-    if st.button("Survey openen (model vastzetten)"):
-        if not st.session_state.criteria or not st.session_state.alternatives:
-            st.error("Vul eerst criteria én alternatieven in.")
-        else:
-            st.session_state.criteria_locked = True
-            st.session_state.alternatives_locked = True
-            st.session_state.model_locked = True
-            st.success("Survey is geopend. Deelnemers kunnen nu invullen.")
-
