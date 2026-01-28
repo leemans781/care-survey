@@ -381,6 +381,9 @@ else:
         st.session_state.criteria_locked = True
         st.session_state.alternatives_locked = True
 
+    # De volgende stap is het tonen van de resultaten. 
+    # Dit is opgedeeld in de resultaten van de criteria en de alternatieven
+    st.markdown("### Resultaten")
     tabs = st.tabs(["Criteria", "Alternatieven"])
     with tabs[0]:
         st.subheader("Criteria — groepsresultaten")
@@ -483,3 +486,36 @@ else:
         
         criteria = st.session_state.criteria
         alternatives = st.session_state.alternatives
+        for crit in criteria:
+            with st.expander(f"Alternatieven voor criterium: {crit}", expanded=False):
+                # haal alle matrices van respondenten voor dit criterium uit session_state
+                matrices = [
+                    resp["matrix"]
+                    for resp in st.session_state.responses.get("alternatives", [])
+                    if resp["criteria"] == crit
+                ]
+                
+                if not matrices:
+                    st.info("Nog geen inzendingen voor dit criterium.")
+                    continue
+                
+                # Consolidated matrix (geometrisch gemiddelde)
+                G = consolidate_matrices(matrices)
+                st.write("**Consolidated matrix**")
+                st.dataframe(pd.DataFrame(G, columns=alternatives, index=alternatives))
+                
+                # Gewichten + CR
+                wg = weights_colmean(G)
+                cr = saaty_cr(G, wg) if len(alternatives) <= 10 else alo_cr(G)
+                
+                # Gewichten tabel
+                df_wg = pd.DataFrame({
+                    "Alternatief": alternatives,
+                    "Weight (%)": (wg*100).round(2)
+                })
+                df_wg["Rank"] = df_wg["Weight (%)"].rank(ascending=False, method="dense").astype(int)
+                st.write(df_wg)
+                st.metric("Consistency Ratio (CR)", f"{cr*100:.1f}%")
+                
+                # Optioneel: barplot voor alternatieven
+                st.bar_chart(df_wg.set_index("Alternatief")["Weight (%)"])
