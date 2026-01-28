@@ -484,38 +484,39 @@ else:
     with tabs[1]:
         st.subheader("Alternatieven — groepsresultaten")
         
-        criteria = st.session_state.criteria
-        alternatives = st.session_state.alternatives
-        for crit in criteria:
-            with st.expander(f"Alternatieven voor criterium: {crit}", expanded=False):
-                # haal alle matrices van respondenten voor dit criterium uit session_state
-                matrices = [
-                    resp["matrix"]
-                    for resp in st.session_state.responses.get("alternatives", [])
-                    if resp["criteria"] == crit
-                ]
+        # VANAF HIER ZIT ER NOG EEN FOUT IN
+        # criteria = st.session_state.criteria
+        # alternatives = st.session_state.alternatives
+        # for crit in criteria:
+        #     with st.expander(f"Alternatieven voor criterium: {crit}", expanded=False):
+        #         # haal alle matrices van respondenten voor dit criterium uit session_state
+        #         matrices = [
+        #             resp["matrix"]
+        #             for resp in st.session_state.responses.get("alternatives", [])
+        #             if resp["criteria"] == crit
+        #         ]
                 
-                if not matrices:
-                    st.info("Nog geen inzendingen voor dit criterium.")
-                    continue
+        #         if not matrices:
+        #             st.info("Nog geen inzendingen voor dit criterium.")
+        #             continue
                 
-                # Consolidated matrix (geometrisch gemiddelde)
-                G = consolidate_matrices(matrices)
-                st.write("**Consolidated matrix**")
-                st.dataframe(pd.DataFrame(G, columns=alternatives, index=alternatives))
+        #         # Consolidated matrix (geometrisch gemiddelde)
+        #         G = consolidate_matrices(matrices)
+        #         st.write("**Consolidated matrix**")
+        #         st.dataframe(pd.DataFrame(G, columns=alternatives, index=alternatives))
                 
-                # Gewichten + CR
-                wg = weights_colmean(G)
-                cr = saaty_cr(G, wg) if len(alternatives) <= 10 else alo_cr(G)
+        #         # Gewichten + CR
+        #         wg = weights_colmean(G)
+        #         cr = saaty_cr(G, wg) if len(alternatives) <= 10 else alo_cr(G)
                 
-                # Gewichten tabel
-                df_wg = pd.DataFrame({
-                    "Alternatief": alternatives,
-                    "Weight (%)": (wg*100).round(2)
-                })
-                df_wg["Rank"] = df_wg["Weight (%)"].rank(ascending=False, method="dense").astype(int)
-                st.write(df_wg)
-                st.metric("Consistency Ratio (CR)", f"{cr*100:.1f}%")
+        #         # Gewichten tabel
+        #         df_wg = pd.DataFrame({
+        #             "Alternatief": alternatives,
+        #             "Weight (%)": (wg*100).round(2)
+        #         })
+        #         df_wg["Rank"] = df_wg["Weight (%)"].rank(ascending=False, method="dense").astype(int)
+        #         st.write(df_wg)
+        #         st.metric("Consistency Ratio (CR)", f"{cr*100:.1f}%")
                 
-                # Optioneel: barplot voor alternatieven
-                st.bar_chart(df_wg.set_index("Alternatief")["Weight (%)"])
+        #         # Optioneel: barplot voor alternatieven
+        #         st.bar_chart(df_wg.set_index("Alternatief")["Weight (%)"])
