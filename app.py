@@ -173,18 +173,29 @@ if mode == "Deelnemer (invullen)":
     if not (st.session_state.criteria_locked and st.session_state.alternatives_locked):
         st.warning("De survey is nog niet geopend.")
         st.stop()
+        
+    st.subheader("Start jouw beoordeling")
+
+    participant_name = st.text_input("Jouw naam (of e-mail)", placeholder="Naam of e-mail")
+    if not participant_name:
+        st.info("Vul je naam/e-mail in om verder te gaan.")
+        st.stop()
+
+    st.write(f"Aantal criteria: **{n}**")
+    st.markdown("---")    
+    
 
     tabs = st.tabs(["Criteria", "Alternatieven"])
     with tabs[0]:
-        st.subheader("Deelnemer — pairwise vergelijkingen invullen")
+        # st.subheader("Start jouw beoordeling")
     
-        participant_name = st.text_input("Jouw naam (of e-mail)", placeholder="Naam of e-mail")
-        if not participant_name:
-            st.info("Vul je naam/e-mail in om verder te gaan.")
-            st.stop()
+        # participant_name = st.text_input("Jouw naam (of e-mail)", placeholder="Naam of e-mail")
+        # if not participant_name:
+        #     st.info("Vul je naam/e-mail in om verder te gaan.")
+        #     st.stop()
     
-        st.write(f"Aantal criteria: **{n}**")
-        st.markdown("---")
+        # st.write(f"Aantal criteria: **{n}**")
+        # st.markdown("---")
     
         # Boven-driehoek invoer
         vals = {}
