@@ -269,28 +269,23 @@ if mode == "Deelnemer (invullen)":
         
     with tabs[1]:
         st.subheader("Alternatieven vergelijken")
-        st.caption("Kies per paar welk criterium belangrijker is en hoe sterk.")
+        st.caption("Vergelijk de alternatieven per criterium.")
         
         if not st.session_state.criteria_submitted:
             st.warning("Je moet eerst de criteria afronden en versturen voordat je alternatieven kunt waarderen.")
             st.stop()
+            
+        # Kleine status bovenaan
+        st.info(f"Ingelogd als: **{st.session_state.participant_name}**  |  Criteria afgerond: ✅")
         
-        # if not st.session_state.criteria_locked:
-        #     st.warning("Alternatieven kunnen pas ingevuld worden als de criteria zijn afgerond.")
-        # else:
-        #     st.subheader("Alternatieven — pairwise vergelijkingen per criterium")
-    
-        #     participant_name = st.text_input("Jouw naam/e-mail (voor alternatieven)", placeholder="Naam of e-mail", key="alt_name")
-        #     if not participant_name:
-        #         st.info("Vul je naam/e-mail in om verder te gaan.")
-        #         st.stop()
-    
         alternatives = st.session_state.alternatives
         criteria = st.session_state.criteria
+        
 
         # Loop over elk criterium
         for crit in criteria:
-            st.markdown(f"### Alternatieven voor criterium: **{crit}**")
+            with st.expander(f" Criterium: {crit}", expanded=False):
+                st.markdown("Kies per paar welk alternatief beter scoort op dit criterium, en hoe sterk.")
             
             n_alt = len(alternatives)
             vals = {}
