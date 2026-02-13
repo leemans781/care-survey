@@ -159,9 +159,10 @@ mode = st.sidebar.radio("Kies modus", ["Deelnemer (invullen)", "Admin (groepresu
 criteria = st.session_state.criteria
 n = len(criteria)
 
-st.header("AHP Pairwise Survey")
-st.write("### Criteria")
-st.write(", ".join(criteria))
+st.header("Analytic Hierarchy Process (AHP) - Beslissingsanalyse")
+st.write("### Bij dutch process innovators (dpi)")
+st.write("Vergelijk criteria en alternatieven om tot een gewogen beslissing te komen")
+#st.write(", ".join(criteria))
 
 
 # -----------------------------
