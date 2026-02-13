@@ -159,6 +159,9 @@ mode = st.sidebar.radio("Kies modus", ["Deelnemer (invullen)", "Admin (groepresu
 criteria = st.session_state.criteria
 n = len(criteria)
 
+alternatieven = st.session_state.alternatives
+a = len(alternatieven)
+
 st.header("Analytic Hierarchy Process (AHP) - Beslissingsanalyse")
 st.write("### Bij dutch process innovators (dpi)")
 st.write("Vergelijk criteria en alternatieven om tot een gewogen beslissing te komen")
@@ -182,20 +185,14 @@ if mode == "Deelnemer (invullen)":
         st.stop()
 
     st.write(f"Aantal criteria: **{n}**")
+    st.write(f"Aantal alternatieven:  **{a}**")
     st.markdown("---")    
     
 
     tabs = st.tabs(["Criteria", "Alternatieven"])
     with tabs[0]:
-        # st.subheader("Start jouw beoordeling")
-    
-        # participant_name = st.text_input("Jouw naam (of e-mail)", placeholder="Naam of e-mail")
-        # if not participant_name:
-        #     st.info("Vul je naam/e-mail in om verder te gaan.")
-        #     st.stop()
-    
-        # st.write(f"Aantal criteria: **{n}**")
-        # st.markdown("---")
+        st.subheader("Criteria vergelijken")
+        st.caption("Kies per paar welk criterium belangrijker is en hoe sterk.")
     
         # Boven-driehoek invoer
         vals = {}
