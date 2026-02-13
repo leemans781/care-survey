@@ -25,15 +25,20 @@ ADMIN_CODE = "secret123"
 # Dit zelfde pas ik doe voor de alternatieven. 
 if "criteria" not in st.session_state:
     st.session_state.criteria = []
-
 if "criteria_locked" not in st.session_state:
     st.session_state.criteria_locked = False
        
 if "alternatives" not in st.session_state:
     st.session_state.alternatives = []
-    
 if "alternatives_locked" not in st.session_state:
     st.session_state.alternatives_locked = False
+    
+if "participant_name" not in st.session_state:
+    st.session_state.participant_name = ""
+if "participant_id" not in st.session_state:
+    st.session_state.participant_id = ""
+if "criteria_submitted" not in st.session_state:
+    st.session_state.criteria_submitted = False    
     
 
 
@@ -179,10 +184,14 @@ if mode == "Deelnemer (invullen)":
         
     st.subheader("Start jouw beoordeling")
 
-    participant_name = st.text_input("Jouw naam (of e-mail)", placeholder="Naam of e-mail")
-    if not participant_name:
+    participant_name = st.text_input("Jouw naam (of e-mail)", value=st.session_state.participant_name, placeholder="Naam of e-mail")
+    st.session_state.participant_name = participant_name.strip()
+    if not st.session_state.participant_name:
         st.info("Vul je naam/e-mail in om verder te gaan.")
         st.stop()
+        
+    if not st.session_state.participant_id:
+        st.session_state.participant_id = "".join(ch for ch in st.session_state.participant_name if ch.isalnum() or ch in ("_", "-", ".")).lower()
 
     st.write(f"Aantal criteria: **{n}**")
     st.write(f"Aantal alternatieven:  **{a}**")
@@ -193,45 +202,7 @@ if mode == "Deelnemer (invullen)":
     with tabs[0]:
         st.subheader("Criteria vergelijken")
         st.caption("Kies per paar welk criterium belangrijker is en hoe sterk.")
-    
-        # # Boven-driehoek invoer
-        # vals = {}
-        # for i in range(n):
-        #     for j in range(i + 1, n):
-        #         key = f"{criteria[i]} vs {criteria[j]}"
-        #         with st.container():
-        #             col1, col2 = st.columns([3, 2])
-        #             with col1:
-        #                 side = st.radio(
-        #                     key,
-        #                     [
-        #                         f"{criteria[i]} > {criteria[j]}",
-        #                         f"{criteria[i]} ≈ {criteria[j]}",
-        #                         f"{criteria[j]} > {criteria[i]}",
-        #                     ],
-        #                     index=0,
-        #                     horizontal=True,
-        #                 )
-        #             with col2:
-        #                 mag = st.slider("Sterkte (1 = zwak, 9 = zeer sterk)", 1, 9, 3, key=key + "_mag")
-    
-        #             # if "≈" in side:
-        #             #     vals[(i, j)] = 1.0
-        #             # elif criteria[i] in side:  # i > j
-        #             #     vals[(i, j)] = float(mag)
-        #             # else:  # j > i
-        #             #     vals[(i, j)] = 1.0 / float(mag)
-                        
-        #             # 🔧 HIER zit oplossing 1
-        #             if "≈" in side:
-        #                 v = 1.0
-        #             elif side.startswith(criteria[i]):  # i > j
-        #                 v = float(mag)
-        #             else:  # j > i
-        #                 v = 1.0 / float(mag)
-        
-        #             vals[(i, j)] = v
-        
+     
         vals = {}
         for i in range(n):
             for j in range(i + 1, n):
@@ -255,11 +226,7 @@ if mode == "Deelnemer (invullen)":
                             label_visibility="collapsed",
                         )
                     with col2:
-                        mag = st.slider(
-                            "Sterkte (1–9)",
-                            1, 9, 3,
-                            key=key + "_mag"
-                        )
+                        mag = st.slider("Sterkte (1 = zwak, 9 = zeer sterk)", 1, 9, 3, key=key + "_mag")
 
                     # Waarde bepalen
                     if "≈" in side:
