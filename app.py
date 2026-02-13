@@ -258,11 +258,13 @@ if mode == "Deelnemer (invullen)":
         # Opslaan
         st.markdown("---")
         if st.button("Verstuur en opslaan"):
+            pid = st.session_state.participant_id
+            st.session_state.criteria_submitted = True
             # Bestandsnaam veilig maken
             safe_name = "".join(ch for ch in participant_name if ch.isalnum() or ch in ("_", "-", "."))
             out_path = os.path.join(RESP_DIR, f"{safe_name}.csv")
             pd.DataFrame(A, columns=criteria, index=criteria).to_csv(out_path, index=True)
-            st.success(f"Inzending opgeslagen: `{out_path}`")
+            #st.success(f"Inzending opgeslagen: `{out_path}`")
             st.info("Je kunt het tabblad sluiten. Bedankt voor het invullen!")
         
     with tabs[1]:
