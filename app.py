@@ -266,86 +266,93 @@ if mode == "Deelnemer (invullen)":
             st.info("Je kunt het tabblad sluiten. Bedankt voor het invullen!")
         
     with tabs[1]:
-        if not st.session_state.criteria_locked:
-            st.warning("Alternatieven kunnen pas ingevuld worden als de criteria zijn afgerond.")
-        else:
-            st.subheader("Alternatieven — pairwise vergelijkingen per criterium")
+        st.subheader("Alternatieven vergelijken")
+        st.caption("Kies per paar welk criterium belangrijker is en hoe sterk.")
+        
+        if not st.session_state.criteria_submitted:
+            st.warning("Je moet eerst de criteria afronden en versturen voordat je alternatieven kunt waarderen.")
+            st.stop()
+        
+        # if not st.session_state.criteria_locked:
+        #     st.warning("Alternatieven kunnen pas ingevuld worden als de criteria zijn afgerond.")
+        # else:
+        #     st.subheader("Alternatieven — pairwise vergelijkingen per criterium")
     
-            participant_name = st.text_input("Jouw naam/e-mail (voor alternatieven)", placeholder="Naam of e-mail", key="alt_name")
-            if not participant_name:
-                st.info("Vul je naam/e-mail in om verder te gaan.")
-                st.stop()
+        #     participant_name = st.text_input("Jouw naam/e-mail (voor alternatieven)", placeholder="Naam of e-mail", key="alt_name")
+        #     if not participant_name:
+        #         st.info("Vul je naam/e-mail in om verder te gaan.")
+        #         st.stop()
     
-            alternatives = st.session_state.alternatives
-            criteria = st.session_state.criteria
-    
-            # Loop over elk criterium
+        alternatives = st.session_state.alternatives
+        criteria = st.session_state.criteria
+
+        # Loop over elk criterium
+        for crit in criteria:
+            st.markdown(f"### Alternatieven voor criterium: **{crit}**")
+            
+            n_alt = len(alternatives)
+            vals = {}
+
+            # Boven-diagonaal invoer van alternatieven
+            for i in range(n_alt):
+                for j in range(i+1, n_alt):
+                    key = f"{crit}_{alternatives[i]}_vs_{alternatives[j]}"
+                    with st.container():
+                        col1, col2 = st.columns([3,2])
+                        with col1:
+                            side = st.radio(
+                                key,
+                                [
+                                    f"{alternatives[i]} > {alternatives[j]}",
+                                    f"{alternatives[i]} ≈ {alternatives[j]}",
+                                    f"{alternatives[j]} > {alternatives[i]}"
+                                ],
+                                index=0,
+                                horizontal=True
+                            )
+                        with col2:
+                            mag = st.slider("Sterkte (1 = zwak, 9 = zeer sterk)", 1, 9, 3, key=key + "_mag")
+                    
+                    # Bereken waarde
+                    if "≈" in side:
+                        v = 1.0
+                    elif side.startswith(alternatives[i]):
+                        v = float(mag)
+                    else:
+                        v = 1.0 / float(mag)
+                    
+                    vals[(i,j)] = v
+
+            # Bouw volledige matrix
+            A = np.ones((n_alt, n_alt), dtype=float)
+            for (i,j), v in vals.items():
+                A[i,j] = v
+                A[j,i] = 1.0 / v
+
+            st.write("**Jouw pairwise matrix voor dit criterium**")
+            st.dataframe(pd.DataFrame(A, columns=alternatives, index=alternatives))
+
+            # Gewichten + CR
+            w = weights_colmean(A)
+            cr = saaty_cr(A, w) if n_alt <= 10 else alo_cr(A)
+
+            st.subheader("Prioriteiten voor dit criterium")
+            st.write(pd.DataFrame({"Alternatief": alternatives, "Weight (%)": (w*100).round(2)}))
+            st.metric("Consistency Ratio (CR)", f"{cr*100:.1f}%")
+
+        # Opslaan van alle alternatieven-matrices per criterium
+        st.markdown("---")
+        if st.button("Verstuur en opslaan alternatieven"):
+            safe_name = "".join(ch for ch in participant_name if ch.isalnum() or ch in ("_", "-", "."))
+            alt_dir = os.path.join(RESP_DIR, "alternatives")
+            os.makedirs(alt_dir, exist_ok=True)
+
             for crit in criteria:
-                st.markdown(f"### Alternatieven voor criterium: **{crit}**")
-                
-                n_alt = len(alternatives)
-                vals = {}
-    
-                # Boven-diagonaal invoer van alternatieven
-                for i in range(n_alt):
-                    for j in range(i+1, n_alt):
-                        key = f"{crit}_{alternatives[i]}_vs_{alternatives[j]}"
-                        with st.container():
-                            col1, col2 = st.columns([3,2])
-                            with col1:
-                                side = st.radio(
-                                    key,
-                                    [
-                                        f"{alternatives[i]} > {alternatives[j]}",
-                                        f"{alternatives[i]} ≈ {alternatives[j]}",
-                                        f"{alternatives[j]} > {alternatives[i]}"
-                                    ],
-                                    index=0,
-                                    horizontal=True
-                                )
-                            with col2:
-                                mag = st.slider("Sterkte (1 = zwak, 9 = zeer sterk)", 1, 9, 3, key=key + "_mag")
-                        
-                        # Bereken waarde
-                        if "≈" in side:
-                            v = 1.0
-                        elif side.startswith(alternatives[i]):
-                            v = float(mag)
-                        else:
-                            v = 1.0 / float(mag)
-                        
-                        vals[(i,j)] = v
-    
-                # Bouw volledige matrix
-                A = np.ones((n_alt, n_alt), dtype=float)
-                for (i,j), v in vals.items():
-                    A[i,j] = v
-                    A[j,i] = 1.0 / v
-    
-                st.write("**Jouw pairwise matrix voor dit criterium**")
-                st.dataframe(pd.DataFrame(A, columns=alternatives, index=alternatives))
-    
-                # Gewichten + CR
-                w = weights_colmean(A)
-                cr = saaty_cr(A, w) if n_alt <= 10 else alo_cr(A)
-    
-                st.subheader("Prioriteiten voor dit criterium")
-                st.write(pd.DataFrame({"Alternatief": alternatives, "Weight (%)": (w*100).round(2)}))
-                st.metric("Consistency Ratio (CR)", f"{cr*100:.1f}%")
-    
-            # Opslaan van alle alternatieven-matrices per criterium
-            st.markdown("---")
-            if st.button("Verstuur en opslaan alternatieven"):
-                safe_name = "".join(ch for ch in participant_name if ch.isalnum() or ch in ("_", "-", "."))
-                alt_dir = os.path.join(RESP_DIR, "alternatives")
-                os.makedirs(alt_dir, exist_ok=True)
-    
-                for crit in criteria:
-                    # Hier zou je dezelfde matrices A moeten opslaan per criterium
-                    out_path = os.path.join(alt_dir, f"{safe_name}_{crit}.csv")
-                    pd.DataFrame(A, columns=alternatives, index=alternatives).to_csv(out_path, index=True)
-                st.success(f"Inzendingen voor alle criteria opgeslagen in '{alt_dir}'")
-                st.info("Bedankt voor het invullen van de alternatieven!")
+                # Hier zou je dezelfde matrices A moeten opslaan per criterium
+                out_path = os.path.join(alt_dir, f"{safe_name}_{crit}.csv")
+                pd.DataFrame(A, columns=alternatives, index=alternatives).to_csv(out_path, index=True)
+            st.success(f"Inzendingen voor alle criteria opgeslagen in '{alt_dir}'")
+            st.info("Bedankt voor het invullen van de alternatieven!")
 
 
     
