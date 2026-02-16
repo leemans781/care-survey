@@ -408,24 +408,41 @@ else:
         st.session_state.alternatives_locked = True
         
     st.markdown("### Survey status")
-    if st.button("Open survey voor deelnemers"):
-        config = {
-            "criteria": st.session_state.criteria,
-            "alternatives": st.session_state.alternatives,
-            "survey_open": True
-        }
-        with open(CONFIG_FILE, "w") as f:
-            json.dump(config, f)
-        st.success("Survey is nu geopend voor alle deelnemers.")
+    can_open = len(st.session_state.criteria) >= 2 and len(st.session_state.alternatives) >= 2
+
+    if not can_open:
+        st.info("Voer minimaal 2 criteria en 2 alternatieven in om de survey te kunnen openen.")
     
-    if st.button("Sluit survey"):
-        if os.path.exists(CONFIG_FILE):
-            with open(CONFIG_FILE, "r") as f:
-                config = json.load(f)
-            config["survey_open"] = False
+    # Alleen tonen en laten klikken als voldoende gegevens
+    if can_open:
+        if st.button("Open survey voor deelnemers"):
+            config = {
+                "criteria": st.session_state.criteria,
+                "alternatives": st.session_state.alternatives,
+                "survey_open": True
+            }
             with open(CONFIG_FILE, "w") as f:
                 json.dump(config, f)
-        st.warning("Survey is gesloten.")
+            st.success("Survey is nu geopend voor alle deelnemers.")
+            
+    # if st.button("Open survey voor deelnemers"):
+    #     config = {
+    #         "criteria": st.session_state.criteria,
+    #         "alternatives": st.session_state.alternatives,
+    #         "survey_open": True
+    #     }
+    #     with open(CONFIG_FILE, "w") as f:
+    #         json.dump(config, f)
+    #     st.success("Survey is nu geopend voor alle deelnemers.")
+    
+    # if st.button("Sluit survey"):
+    #     if os.path.exists(CONFIG_FILE):
+    #         with open(CONFIG_FILE, "r") as f:
+    #             config = json.load(f)
+    #         config["survey_open"] = False
+    #         with open(CONFIG_FILE, "w") as f:
+    #             json.dump(config, f)
+    #     st.warning("Survey is gesloten.")
 
 
     # De volgende stap is het tonen van de resultaten. 
