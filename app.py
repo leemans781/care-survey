@@ -213,7 +213,7 @@ if mode == "Deelnemer (invullen)":
                 with st.container(border=True):
                     st.write(f"**Vergelijk:** {criteria[i]} vs {criteria[j]}")
 
-                    col1, col2 = st.columns([3, 2])
+                    col1, col2 = st.columns([4, 2])
                     with col1:
                         side = st.radio(
                             "Keuze",
@@ -506,8 +506,7 @@ else:
             
         st.markdown("---")
 
-    if st.button("Download individuele resultaten (Excel)"):
-        
+        # Export knop, die de individuele resultaten opslaat in Excel. 
         wb = Workbook()
         wb.remove(wb.active)  # verwijder standaard sheet
         
@@ -548,14 +547,8 @@ else:
         wb.save(output)
         output.seek(0)
         
-        st.download_button(
-            "Download Excel bestand",
-            output,
-            file_name="individual_results.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        st.download_button(label="Download individuele resultaten (Excel)", data=output,file_name="individual_results.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-    
         st.caption("MVP: responses staan lokaal in de map 'responses/'. In Streamlit Cloud blijven ze bewaard zolang de app niet opnieuw wordt gedeployed. Voor productie: gebruik een database of Blob Storage.")
     
     with tabs[1]:
