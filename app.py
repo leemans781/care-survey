@@ -52,8 +52,9 @@ if os.path.exists(CONFIG_FILE):
 
     st.session_state.criteria = config.get("criteria", [])
     st.session_state.alternatives = config.get("alternatives", [])
-    st.session_state.criteria_locked = config.get("survey_open", False)
-    st.session_state.alternatives_locked = config.get("survey_open", False)
+    st.session_state.survey_open = config.get("survey_open", False)
+    #st.session_state.criteria_locked = config.get("survey_open", False)
+    #st.session_state.alternatives_locked = config.get("survey_open", False)
 
 
 def weights_colmean(M: np.ndarray) -> np.ndarray:
