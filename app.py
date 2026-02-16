@@ -657,14 +657,17 @@ else:
         st.markdown("### Totale gewogen scores over alle criteria")
         st.dataframe(df_total)
         
+        # Visualisatie (bar plot)
         best_alt = df_total.loc[df_total["Totale gewogen score (%)"].idxmax(), "Alternatief"]
         st.markdown(f'### Beste optie alternatief: {best_alt}')
-        fig, ax = plt.subplots(figsize=(5,3))
+        fig, ax = plt.subplots(figsize=(4,2), dpi=80)
         alternatives_names = df_total["Alternatief"]
         scores = df_total["Totale gewogen score (%)"]
-        bars = ax.bar(alternatives_names, scores, color='skyblue')
-        ax.set_ylabel("Totale gewogen score (%)")
+        bars = ax.bar(alternatives_names, scores)
+        ax.set_xlabel("Alternatief", fontsize=8)
+        ax.set_ylabel("Totale gewogen score (%)", fontsize=8)
         ax.set_ylim(0,100)
+        ax.tick_params(axis='both', labelsize=8)
         for bar in bars:
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width() / 2, height, f"{height:.1f}%", ha="center", va="bottom", fontsize=8)
