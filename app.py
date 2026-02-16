@@ -14,6 +14,7 @@ from numpy.linalg import eigvals
 from openpyxl import Workbook
 from io import BytesIO
 import json
+import matplotlib.pyplot as plt
 
 
 # BESTANDEN EN INSTELLINGEN
@@ -476,7 +477,19 @@ else:
         # Rang bepalen
         df_grp["Rank"] = df_grp["Weight (%)"].rank(ascending=False, method="dense").astype(int)
         st.write(df_grp)
-    
+        
+        fig, ax = plt.subplots()
+        criteria_names = df_grp["Criteria"]
+        weights = df_grp["Weight (%)"]
+        bars = ax.bar(criteria_names, weights)
+        ax.set_xlabel("Criteria")
+        ax.set_ylabel("Gewicht (%)")
+        ax.set_ylim(0,100)
+        for bar in bars:
+            height = bar.get_height()
+            ax.text(bar.getx() + bar.get_width()/2, height, f"{height:.2f}%", ha="center", va="bottom")
+            
+        st.pyplot(fig)
         #st.metric("Group Consistency Ratio (CR)", f"{group_cr * 100:.1f}%")
         
         # Bereken homogeniteit en consensus
