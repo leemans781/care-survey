@@ -579,8 +579,12 @@ else:
             st.info("Nog geen alternatieven beoordeeld door deelnemers.")
             st.stop()
             
-        files = [f for f in os.listdir(alt_dir) if f.endswith(".csv")]
-        st.write(f"Gevonden inzendingen: **{len(files)}**")
+        # files = [f for f in os.listdir(alt_dir) if f.endswith(".csv")]
+        # st.write(f"Gevonden inzendingen: **{len(files)}**")
+        
+        participants = set(f.split("_")[0] for f in files)
+        st.write(f"Gevonden deelnemers: **{len(participants)}**")
+
         
         if not files:
             st.info("Geen alternatieven-responses gevonden.")
@@ -621,15 +625,6 @@ else:
             df_w = pd.DataFrame({"Alternatief": alternatieven, "Gewicht (%)": (w*100).round(2)})
             df_w["Rang"] = df_w["Gewicht (%)"].rank(ascending=False, method='dense').astype(int)
             st.dataframe(df_w)
-        
-        # Bereken totaal gewogen score per alternatief
-        # We gebruiken de criteria-gewichten uit de criteria-tab
-        # if os.path.exists(CONFIG_FILE):
-        #     with open(CONFIG_FILE, "r") as f:
-        #         config = json.load(f)
-        #     criteria_weights = config.get("criteria_weights", [1/len(criteria)]*len(criteria))
-        # else:
-        #     criteria_weights = [1/len(criteria)]*len(criteria)
         
         criteria_weights = wg
     
