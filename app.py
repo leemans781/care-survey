@@ -22,6 +22,8 @@ os.makedirs(RESP_DIR, exist_ok=True)
 
 ADMIN_CODE = "secret123"
 
+CONFIG_FILE = "config.json"
+
 # Dit moet ervoor zorgen dat de respondenten pas kunnen invullen, als de beheerder de criteria heeft ingevuld
 # Er valt namelijk nog niks in te vullen, als de criteria nog niet bekend zijn
 # Dit zelfde pas ik doe voor de alternatieven. 
@@ -42,6 +44,17 @@ if "participant_id" not in st.session_state:
 if "criteria_submitted" not in st.session_state:
     st.session_state.criteria_submitted = False    
     
+# -----------------------------
+# Config laden (gedeeld voor alle gebruikers)
+# -----------------------------
+if os.path.exists(CONFIG_FILE):
+    with open(CONFIG_FILE, "r") as f:
+        config = json.load(f)
+
+    st.session_state.criteria = config.get("criteria", [])
+    st.session_state.alternatives = config.get("alternatives", [])
+    st.session_state.criteria_locked = config.get("survey_open", False)
+    st.session_state.alternatives_locked = config.get("survey_open", False)
 
 
 def weights_colmean(M: np.ndarray) -> np.ndarray:
@@ -406,6 +419,29 @@ else:
     ):
         st.session_state.criteria_locked = True
         st.session_state.alternatives_locked = True
+        
+        
+    st.markdown("### Survey status")
+
+    if st.button("Open survey voor deelnemers"):
+        config = {
+            "criteria": st.session_state.criteria,
+            "alternatives": st.session_state.alternatives,
+            "survey_open": True
+        }
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(config, f)
+        st.success("Survey is nu geopend voor alle deelnemers.")
+    
+    if st.button("Sluit survey"):
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, "r") as f:
+                config = json.load(f)
+            config["survey_open"] = False
+            with open(CONFIG_FILE, "w") as f:
+                json.dump(config, f)
+        st.warning("Survey is gesloten.")
+
 
     # De volgende stap is het tonen van de resultaten. 
     # Dit is opgedeeld in de resultaten van de criteria en de alternatieven
