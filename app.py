@@ -579,7 +579,7 @@ else:
             st.info("Nog geen alternatieven beoordeeld door deelnemers.")
             st.stop()
             
-        # files = [f for f in os.listdir(alt_dir) if f.endswith(".csv")]
+        files = [f for f in os.listdir(alt_dir) if f.endswith(".csv")]
         # st.write(f"Gevonden inzendingen: **{len(files)}**")
         
         participants = set(f.split("_")[0] for f in files)
