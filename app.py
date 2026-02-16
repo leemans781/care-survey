@@ -425,26 +425,6 @@ else:
                 json.dump(config, f)
             st.success("Survey is nu geopend voor alle deelnemers.")
             
-    # if st.button("Open survey voor deelnemers"):
-    #     config = {
-    #         "criteria": st.session_state.criteria,
-    #         "alternatives": st.session_state.alternatives,
-    #         "survey_open": True
-    #     }
-    #     with open(CONFIG_FILE, "w") as f:
-    #         json.dump(config, f)
-    #     st.success("Survey is nu geopend voor alle deelnemers.")
-    
-    # if st.button("Sluit survey"):
-    #     if os.path.exists(CONFIG_FILE):
-    #         with open(CONFIG_FILE, "r") as f:
-    #             config = json.load(f)
-    #         config["survey_open"] = False
-    #         with open(CONFIG_FILE, "w") as f:
-    #             json.dump(config, f)
-    #     st.warning("Survey is gesloten.")
-
-
     # De volgende stap is het tonen van de resultaten. 
     # Dit is opgedeeld in de resultaten van de criteria en de alternatieven
     st.markdown("### Resultaten")
@@ -593,39 +573,109 @@ else:
     with tabs[1]:
         st.subheader("Alternatieven — groepsresultaten")
         
-        # VANAF HIER ZIT ER NOG EEN FOUT IN
-        # criteria = st.session_state.criteria
-        # alternatives = st.session_state.alternatives
-        # for crit in criteria:
-        #     with st.expander(f"Alternatieven voor criterium: {crit}", expanded=False):
-        #         # haal alle matrices van respondenten voor dit criterium uit session_state
-        #         matrices = [
-        #             resp["matrix"]
-        #             for resp in st.session_state.responses.get("alternatives", [])
-        #             if resp["criteria"] == crit
-        #         ]
+        #Lees alle responses van alternatieven
+        alt_dir = os.path.join(RESP_DIR, "alternatives")
+        if not os.path.exists(alt_dir):
+            st.info("Nog geen alternatieven beoordeeld door deelnemers.")
+            st.stop()
+            
+        files = [f for f in os.listdir(alt_dir) if f.endswith(".csv")]
+        st.write(f"Gevonden inzendingen: **{len(files)}**")
+        
+        if not files:
+            st.info("Geen alternatieven-responses gevonden.")
+            st.stop()
+            
+        # Voor elke criterium, consolideer matrix
+        consolidated_per_crit = {}
+        bad_files = []
+        
+        for crit in criteria:
+            matrices = []
+            for f in files:
+                if crit in f:
+                    path = os.path.join(alt_dir, f)
+                    try:
+                        df = pd.read_csv(path, index_col=0)
+                        if df.shape != (len(alternatieven), len(alternatieven)):
+                            bad_files.append(f"{f} (dimensie {df.shape}, verwacht {(len(alternatieven), len(alternatieven))}")
+                            continue
+                        matrices.append(df.values.astype(float))
+                    except Exception as e:
+                        bad_files.append(f"{f} (error: {e})")
+            if matrices:
+                consolidated_per_crit[crit] = consolidate_matrices(matrices)
+        
+        if bad_files:
+            st.warning("Sommige bestanden konden niet gebruikt worden:\n- " + "\n- ".join(bad_files))
+            
+        if not consolidated_per_crit:
+            st.info("Geen bruikbare alternatieven gevonden.")
+            st.stop()
+            
+        # Toon een tabel per criterium
+        st.markdown("### Geconsolideerde gewichten per criterium")
+        for crit, mat in consolidated_per_crit.items():
+            w = weights_colmean(mat)
+            st.write(f"**Criterium: {crit}**")
+            df_w = pd.Dataframe({"Alternatief": alternatieven, "Gewicht (%)": (w*100).round(2)})
+            df_w["Rang"] = df_w["Gewicht (%)"].rank(ascending=False, method='dense').astype(int)
+            st.dataframe(df_w)
+        
+        # Bereken totaal gewogen score per alternatief
+        # We gebruiken de criteria-gewichten uit de criteria-tab
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, "r") as f:
+                config = json.load(f)
+            criteria_weights = config.get("criteria_weights", [1/len(criteria)]*len(criteria))
+        else:
+            criteria_weights = [1/len(criteria)]*len(criteria)
+    
+        total_scores = np.zeros(len(alternatieven))
+        for i, crit in enumerate(criteria):
+            w = weights_colmean(consolidated_per_crit[crit])
+            total_scores += w * criteria_weights[i]
+    
+        df_total = pd.DataFrame({
+            "Alternatief": alternatieven,
+            "Totale gewogen score (%)": (total_scores*100).round(2)
+        })
+        df_total["Rang"] = df_total["Totale gewogen score (%)"].rank(ascending=False, method="dense").astype(int)
+    
+        st.markdown("### Totale gewogen scores over alle criteria")
+        st.dataframe(df_total)
+    
+        # Downloadknoppen
+        st.markdown("---")
+        colA, colB, colC, colD = st.columns(4)
+        with colA:
+            csv_bytes = pd.concat([pd.DataFrame(w) for w in consolidated_per_crit.values()], axis=1).to_csv(index=False).encode("utf-8")
+            st.download_button("Download overzicht per criterium", csv_bytes, "alternatives_per_criterion.csv")
+        with colB:
+            csv_bytes = df_total.to_csv(index=False).encode("utf-8")
+            st.download_button("Download totale gewichten", csv_bytes, "total_alternative_weights.csv")
+        with colC:
+            log_bytes = "\n".join(files).encode("utf-8")
+            st.download_button("Download lijst deelnemers", log_bytes, "participants_used.txt")
+        with colD:
+            # Individuele resultaten in Excel
+            wb = Workbook()
+            wb.remove(wb.active)
+            for f in files:
+                path = os.path.join(alt_dir, f)
+                df = pd.read_csv(path, index_col=0)
+                participant = os.path.splitext(f)[0][:31]
+                ws = wb.create_sheet(title=participant)
+                ws.append(["Pairwise Matrix"])
+                ws.append([])
+                ws.append([""] + list(df.columns))
+                for idx, row in df.iterrows():
+                    ws.append([idx] + list(row.values))
+            output = BytesIO()
+            wb.save(output)
+            output.seek(0)
+            st.download_button("Download individuele resultaten (Excel)", data=output,
+                               file_name="individual_alternative_results.xlsx",
+                               mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                 
-        #         if not matrices:
-        #             st.info("Nog geen inzendingen voor dit criterium.")
-        #             continue
-                
-        #         # Consolidated matrix (geometrisch gemiddelde)
-        #         G = consolidate_matrices(matrices)
-        #         st.write("**Consolidated matrix**")
-        #         st.dataframe(pd.DataFrame(G, columns=alternatives, index=alternatives))
-                
-        #         # Gewichten + CR
-        #         wg = weights_colmean(G)
-        #         cr = saaty_cr(G, wg) if len(alternatives) <= 10 else alo_cr(G)
-                
-        #         # Gewichten tabel
-        #         df_wg = pd.DataFrame({
-        #             "Alternatief": alternatives,
-        #             "Weight (%)": (wg*100).round(2)
-        #         })
-        #         df_wg["Rank"] = df_wg["Weight (%)"].rank(ascending=False, method="dense").astype(int)
-        #         st.write(df_wg)
-        #         st.metric("Consistency Ratio (CR)", f"{cr*100:.1f}%")
-                
-        #         # Optioneel: barplot voor alternatieven
-        #         st.bar_chart(df_wg.set_index("Alternatief")["Weight (%)"])
+            
