@@ -478,7 +478,7 @@ else:
         df_grp["Rank"] = df_grp["Weight (%)"].rank(ascending=False, method="dense").astype(int)
         st.write(df_grp)
         
-        fig, ax = plt.subplots(figsize=(4,2))
+        fig, ax = plt.subplots(figsize=(4,2), dpi=80)
         criteria_names = df_grp["Criteria"]
         weights = df_grp["Weight (%)"]
         bars = ax.bar(criteria_names, weights)
@@ -489,7 +489,7 @@ else:
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2, height, f"{height:.2f}%", ha="center", va="bottom")
             
-        st.pyplot(fig)
+        st.pyplot(fig, use_container_width=False)
         #st.metric("Group Consistency Ratio (CR)", f"{group_cr * 100:.1f}%")
         
         # Bereken homogeniteit en consensus
