@@ -487,7 +487,7 @@ else:
         ax.set_ylim(0,100)
         for bar in bars:
             height = bar.get_height()
-            ax.text(bar.getx() + bar.get_width()/2, height, f"{height:.2f}%", ha="center", va="bottom")
+            ax.text(bar.get_x() + bar.get_width()/2, height, f"{height:.2f}%", ha="center", va="bottom")
             
         st.pyplot(fig)
         #st.metric("Group Consistency Ratio (CR)", f"{group_cr * 100:.1f}%")
