@@ -15,13 +15,14 @@ from openpyxl import Workbook
 from io import BytesIO
 import json
 
+
+# BESTANDEN EN INSTELLINGEN
 st.set_page_config(page_title="AHP Survey", layout="wide")
 
 RESP_DIR = "responses"  # map waarin CSV's van deelnemers komen
 os.makedirs(RESP_DIR, exist_ok=True)
 
 ADMIN_CODE = "secret123"
-
 CONFIG_FILE = "config.json"
 
 # Dit moet ervoor zorgen dat de respondenten pas kunnen invullen, als de beheerder de criteria heeft ingevuld
@@ -44,9 +45,7 @@ if "participant_id" not in st.session_state:
 if "criteria_submitted" not in st.session_state:
     st.session_state.criteria_submitted = False    
     
-# -----------------------------
 # Config laden (gedeeld voor alle gebruikers)
-# -----------------------------
 if os.path.exists(CONFIG_FILE):
     with open(CONFIG_FILE, "r") as f:
         config = json.load(f)
@@ -165,17 +164,13 @@ def safe_float(x):
     except:
         return np.nan
 
-# -----------------------------
+
 # Sidebar: moduskeuze
-# -----------------------------
 st.sidebar.header("Navigatie")
 mode = st.sidebar.radio("Kies modus", ["Deelnemer (invullen)", "Admin (groepresultaat)"])
 
-# -----------------------------
-# Criteria invoer (geldt voor beide modi)
-# -----------------------------
-# st.header("AHP Pairwise Survey")
 
+# BASISINFORMATIE 
 criteria = st.session_state.criteria
 n = len(criteria)
 
@@ -185,20 +180,18 @@ a = len(alternatieven)
 st.header("Analytic Hierarchy Process (AHP) - Beslissingsanalyse")
 st.write("### Bij dutch process innovators (dpi)")
 st.write("Vergelijk criteria en alternatieven om tot een gewogen beslissing te komen")
-#st.write(", ".join(criteria))
 
-
-# -----------------------------
 # DEELNEMER MODUS
-# -----------------------------
 if mode == "Deelnemer (invullen)":
-     
-    if not (st.session_state.criteria_locked and st.session_state.alternatives_locked):
+    
+    # Survey pas openen als criteria & alternatieven bekend zijn
+    if not st.session_state.get('survey_open', False):
         st.warning("De survey is nog niet geopend.")
         st.stop()
         
     st.subheader("Start jouw beoordeling")
 
+    # Invullen naam/e-mail
     participant_name = st.text_input("Jouw naam (of e-mail)", value=st.session_state.participant_name, placeholder="Naam of e-mail")
     st.session_state.participant_name = participant_name.strip()
     if not st.session_state.participant_name:
@@ -215,6 +208,7 @@ if mode == "Deelnemer (invullen)":
     
 
     tabs = st.tabs(["Criteria", "Alternatieven"])
+    # Criteria invullen
     with tabs[0]:
         st.subheader("Criteria vergelijken")
         st.caption("Kies per paar welk criterium belangrijker is en hoe sterk.")
@@ -282,7 +276,8 @@ if mode == "Deelnemer (invullen)":
             pd.DataFrame(A, columns=criteria, index=criteria).to_csv(out_path, index=True)
             #st.success(f"Inzending opgeslagen: `{out_path}`")
             st.info("Je kunt het tabblad sluiten. Bedankt voor het invullen!")
-        
+     
+    # Alternatieven invullen    
     with tabs[1]:
         st.subheader("Alternatieven vergelijken")
         st.caption("Vergelijk de alternatieven per criterium.")
@@ -372,10 +367,7 @@ if mode == "Deelnemer (invullen)":
             st.info("Bedankt voor het invullen van de alternatieven!")
 
 
-    
-# -----------------------------
 # ADMIN MODUS
-# -----------------------------
 else:
     st.subheader("Admin — groepsresultaat (alleen voor jou)")
 
@@ -384,11 +376,9 @@ else:
         st.warning("Voer de juiste admin code in om groepsresultaat te zien.")
         st.stop()
         
+    # Criteria instellen    
     st.markdown("### Criteria instellen (alleen admin)")
-    criteria_input = st.text_area(
-        "Voer criteria in (één per regel)",
-        value="\n".join(st.session_state.criteria)
-    )
+    criteria_input = st.text_area("Voer criteria in (één per regel)", value="\n".join(st.session_state.criteria))
     
     if st.button("Criteria opslaan"):
         new_criteria = [c.strip() for c in criteria_input.splitlines() if c.strip()]
@@ -401,28 +391,22 @@ else:
             
     # De volgende stap: alternatieven introduceren. 
     st.markdown("### Alternatieven instellen (alleen admin)")
-
     alternatives_input = st.text_area("Voer alternatieven in (één per regel)", value="\n".join(st.session_state.alternatives))
     
     if st.button("Alternatieven opslaan"):
         new_alternatives = [a.strip() for a in alternatives_input.splitlines() if a.strip()]
-        
         if len(new_alternatives) < 2:
             st.error("Minimaal 2 alternatieven vereist.")
         else:
             st.session_state.alternatives = new_alternatives
             st.success("Alternatieven opgeslagen.")
-            
-    if (
-        len(st.session_state.criteria) >= 2
-        and len(st.session_state.alternatives) >= 2
-    ):
+     
+    # Survey open / gesloten status         
+    if (len(st.session_state.criteria) >= 2 and len(st.session_state.alternatives) >= 2):
         st.session_state.criteria_locked = True
         st.session_state.alternatives_locked = True
         
-        
     st.markdown("### Survey status")
-
     if st.button("Open survey voor deelnemers"):
         config = {
             "criteria": st.session_state.criteria,
