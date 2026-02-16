@@ -482,12 +482,13 @@ else:
         criteria_names = df_grp["Criteria"]
         weights = df_grp["Weight (%)"]
         bars = ax.bar(criteria_names, weights)
-        ax.set_xlabel("Criteria")
-        ax.set_ylabel("Gewicht (%)")
+        ax.set_xlabel("Criteria", fontsize=8)
+        ax.set_ylabel("Gewicht (%)", fontsize=8)
         ax.set_ylim(0,100)
+        ax.tick_params(axis='both', labelsize=8)
         for bar in bars:
             height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2, height, f"{height:.2f}%", ha="center", va="bottom")
+            ax.text(bar.get_x() + bar.get_width()/2, height, f"{height:.2f}%", ha="center", va="bottom", fontsize=8)
             
         st.pyplot(fig, use_container_width=False)
         #st.metric("Group Consistency Ratio (CR)", f"{group_cr * 100:.1f}%")
