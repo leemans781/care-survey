@@ -359,11 +359,11 @@ if mode == "Deelnemer (invullen)":
             alt_dir = os.path.join(RESP_DIR, "alternatives")
             os.makedirs(alt_dir, exist_ok=True)
 
-            for crit in criteria:
+            for crit, Acrit in all_alt_matrices.items():
                 # Hier zou je dezelfde matrices A moeten opslaan per criterium
                 safe_crit = "".join(ch for ch in crit if ch.isalnum() or ch in ("_", "-"))
                 out_path = os.path.join(alt_dir, f"{safe_name}_{safe_crit}.csv")
-                pd.DataFrame(A, columns=alternatives, index=alternatives).to_csv(out_path, index=True)
+                pd.DataFrame(Acrit, columns=alternatives, index=alternatives).to_csv(out_path, index=True)
             st.success(f"Inzendingen voor alle criteria opgeslagen in '{alt_dir}'")
             st.info("Bedankt voor het invullen van de alternatieven!")
 
