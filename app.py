@@ -478,7 +478,7 @@ else:
         df_grp["Rank"] = df_grp["Weight (%)"].rank(ascending=False, method="dense").astype(int)
         st.write(df_grp)
         
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(6,4))
         criteria_names = df_grp["Criteria"]
         weights = df_grp["Weight (%)"]
         bars = ax.bar(criteria_names, weights)
