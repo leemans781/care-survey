@@ -478,6 +478,7 @@ else:
         df_grp["Rank"] = df_grp["Weight (%)"].rank(ascending=False, method="dense").astype(int)
         st.write(df_grp)
         
+        # Visualisatie (bar plot)
         fig, ax = plt.subplots(figsize=(4,2), dpi=80)
         criteria_names = df_grp["Criteria"]
         weights = df_grp["Weight (%)"]
@@ -655,7 +656,21 @@ else:
     
         st.markdown("### Totale gewogen scores over alle criteria")
         st.dataframe(df_total)
-    
+        
+        best_alt = df_total.loc[df_total["Totale gewogen score (%)"].idxmax(), "Alternatief"]
+        st.markdown(f'### Beste optie alternatief: {best_alt}')
+        fig, ax = plt.subplots(figsize=(5,3))
+        alternatives_names = df_total["Alternatief"]
+        scores = df_total["Totale gewogen score (%)"]
+        bars = ax.bar(alternatives_names, scores, score='skyblue')
+        ax.set_ylabel("Totale gewogen score (%)")
+        ax.set_ylim(0,100)
+        for bar in bars:
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width() / 2, height, f"{height:.1f}%", ha="center", va="bottom", fontsize=8)
+            
+        plt.tight_layout()
+        st.pyplot(fig)
         # Downloadknoppen
         st.markdown("---")
         colA, colB, colC, colD = st.columns(4)
