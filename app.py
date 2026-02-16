@@ -662,7 +662,7 @@ else:
         fig, ax = plt.subplots(figsize=(5,3))
         alternatives_names = df_total["Alternatief"]
         scores = df_total["Totale gewogen score (%)"]
-        bars = ax.bar(alternatives_names, scores, score='skyblue')
+        bars = ax.bar(alternatives_names, scores, color='skyblue')
         ax.set_ylabel("Totale gewogen score (%)")
         ax.set_ylim(0,100)
         for bar in bars:
