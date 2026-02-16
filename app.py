@@ -190,7 +190,8 @@ if mode == "Deelnemer (invullen)":
         st.info("Vul je naam/e-mail in om verder te gaan.")
         st.stop()
         
-    if not st.session_state.participant_id:
+    #if not st.session_state.participant_id:
+    if "participant_id" not in st.session_state:     
         st.session_state.participant_id = "".join(ch for ch in st.session_state.participant_name if ch.isalnum() or ch in ("_", "-", ".")).lower()
 
     st.write(f"Aantal criteria: **{n}**")
@@ -280,6 +281,7 @@ if mode == "Deelnemer (invullen)":
         
         alternatives = st.session_state.alternatives
         criteria = st.session_state.criteria
+        all_alt_matrices = {}
         
 
         # Loop over elk criterium
@@ -325,6 +327,8 @@ if mode == "Deelnemer (invullen)":
             for (i,j), v in vals.items():
                 A[i,j] = v
                 A[j,i] = 1.0 / v
+            
+            all_alt_matrices[crit] = A.copy()
 
             st.write("**Jouw pairwise matrix voor dit criterium**")
             st.dataframe(pd.DataFrame(A, columns=alternatives, index=alternatives))
@@ -346,7 +350,8 @@ if mode == "Deelnemer (invullen)":
 
             for crit in criteria:
                 # Hier zou je dezelfde matrices A moeten opslaan per criterium
-                out_path = os.path.join(alt_dir, f"{safe_name}_{crit}.csv")
+                safe_crit = "".join(ch for ch in crit if ch.isalnum() or ch in ("_", "-"))
+                out_path = os.path.join(alt_dir, f"{safe_name}_{safe_crit}.csv")
                 pd.DataFrame(A, columns=alternatives, index=alternatives).to_csv(out_path, index=True)
             st.success(f"Inzendingen voor alle criteria opgeslagen in '{alt_dir}'")
             st.info("Bedankt voor het invullen van de alternatieven!")
