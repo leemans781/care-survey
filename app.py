@@ -624,17 +624,19 @@ else:
         
         # Bereken totaal gewogen score per alternatief
         # We gebruiken de criteria-gewichten uit de criteria-tab
-        if os.path.exists(CONFIG_FILE):
-            with open(CONFIG_FILE, "r") as f:
-                config = json.load(f)
-            criteria_weights = config.get("criteria_weights", [1/len(criteria)]*len(criteria))
-        else:
-            criteria_weights = [1/len(criteria)]*len(criteria)
+        # if os.path.exists(CONFIG_FILE):
+        #     with open(CONFIG_FILE, "r") as f:
+        #         config = json.load(f)
+        #     criteria_weights = config.get("criteria_weights", [1/len(criteria)]*len(criteria))
+        # else:
+        #     criteria_weights = [1/len(criteria)]*len(criteria)
+        
+        criteria_weights = wg
     
         total_scores = np.zeros(len(alternatieven))
         for i, crit in enumerate(criteria):
-            w = weights_colmean(consolidated_per_crit[crit])
-            total_scores += w * criteria_weights[i]
+            w_alt = weights_colmean(consolidated_per_crit[crit])
+            total_scores += w_alt * wg[i]
     
         df_total = pd.DataFrame({
             "Alternatief": alternatieven,
