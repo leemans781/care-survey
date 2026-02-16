@@ -11,7 +11,8 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 from numpy.linalg import eigvals
-
+from openpyxl import Workbook
+from io import BytesIO
 
 st.set_page_config(page_title="AHP Survey", layout="wide")
 
@@ -502,6 +503,58 @@ else:
             # log van gebruikte files
             log_bytes = "\n".join(files).encode("utf-8")
             st.download_button("Download list of participant files (TXT)", log_bytes, file_name="participants_used.txt")
+            
+        st.markdown("---")
+
+    if st.button("Download individuele resultaten (Excel)"):
+        
+        wb = Workbook()
+        wb.remove(wb.active)  # verwijder standaard sheet
+        
+        for f in files:
+            path = os.path.join(RESP_DIR, f)
+            df = pd.read_csv(path, index_col=0)
+            participant = os.path.splitext(f)[0]
+            
+            ws = wb.create_sheet(title=participant[:31])  # Excel max 31 chars
+            
+            A = df.values.astype(float)
+            weights = weights_colmean(A)
+            cr = saaty_cr(A, weights) if n <= 10 else alo_cr(A)
+            
+            # ---- Matrix schrijven ----
+            ws.append(["Pairwise Matrix"])
+            ws.append([])
+            
+            ws.append([""] + list(df.columns))
+            for idx, row in df.iterrows():
+                ws.append([idx] + list(row.values))
+            
+            ws.append([])
+            ws.append([])
+            
+            # ---- Prioriteiten schrijven ----
+            ws.append(["Prioriteiten"])
+            ws.append(["Criteria", "Weight (%)"])
+            
+            for i in range(n):
+                ws.append([criteria[i], round(weights[i] * 100, 2)])
+            
+            ws.append([])
+            ws.append(["Consistency Ratio", round(cr * 100, 2)])
+        
+        # In-memory opslaan
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        st.download_button(
+            "Download Excel bestand",
+            output,
+            file_name="individual_results.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
     
         st.caption("MVP: responses staan lokaal in de map 'responses/'. In Streamlit Cloud blijven ze bewaard zolang de app niet opnieuw wordt gedeployed. Voor productie: gebruik een database of Blob Storage.")
     
