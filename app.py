@@ -618,7 +618,7 @@ else:
         for crit, mat in consolidated_per_crit.items():
             w = weights_colmean(mat)
             st.write(f"**Criterium: {crit}**")
-            df_w = pd.Dataframe({"Alternatief": alternatieven, "Gewicht (%)": (w*100).round(2)})
+            df_w = pd.DataFrame({"Alternatief": alternatieven, "Gewicht (%)": (w*100).round(2)})
             df_w["Rang"] = df_w["Gewicht (%)"].rank(ascending=False, method='dense').astype(int)
             st.dataframe(df_w)
         
