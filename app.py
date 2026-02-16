@@ -672,8 +672,7 @@ else:
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width() / 2, height, f"{height:.1f}%", ha="center", va="bottom", fontsize=8)
             
-        plt.tight_layout()
-        st.pyplot(fig)
+        st.pyplot(fig, use_container_width=False)
         # Downloadknoppen
         st.markdown("---")
         colA, colB, colC, colD = st.columns(4)
