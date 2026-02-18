@@ -494,14 +494,14 @@ else:
          
         plt.tight_layout()    
         st.pyplot(fig, use_container_width=False)
-        #st.metric("Group Consistency Ratio (CR)", f"{group_cr * 100:.1f}%")
         
         # Uitvouwbaar tabje voor meer detail van de resultaten
         with st.expander("Uitsplitsing verdeling"):
+            st.metric("Group Consistency Ratio (CR)", f"{group_cr * 100:.1f}%")
             st.write("**Consolidated priorities (per criteria)**")
             df_consolidated = pd.DataFrame({"Criteria": criteria,"Prioriteiten": wg * 100})
             df_consolidated["Rang"] = df_consolidated["Prioriteiten"].rank(ascending=False, method="dense").astype(int)
-            df_consolidated = df_consolidated.sort_values("Rang").reset_index(drop=True)
+            #df_consolidated = df_consolidated.sort_values("Rang").reset_index(drop=True)
             styled_consolidated = (df_consolidated.style.background_gradient(subset=["Rang"], cmap="Greens_r", vmin=1, vmax=df_consolidated["Rang"].max()).format({"Prioriteiten": "{:.1f}%"}))
             st.dataframe(styled_consolidated, use_container_width=True)
             
@@ -519,7 +519,7 @@ else:
         homogeneity = calculate_homogeneity(priorities_list)
         consensus = calculate_consensus(priorities_list)
         
-        st.subheader("Groepshomogeniteit & Consensus")
+        st.subheader("Global priorities")
         st.metric("Homogeniteit (S)", f"{homogeneity:.3f}")
         st.metric("Consensus (S*)", f"{consensus:.3f}")
         
