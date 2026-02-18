@@ -488,18 +488,27 @@ else:
         # st.write(df_grp)
         
         # Visualisatie (bar plot)
-        fig, ax = plt.subplots(figsize=(4,2), dpi=80)
+        plt.style.use("default")  # voorkomt zware styles
+        fig, ax = plt.subplots(figsize=(5,3), dpi=120)
         criteria_names = df_grp["Criteria"]
         weights = df_grp["Prioriteiten"]
-        bars = ax.bar(criteria_names, weights)
-        ax.set_xlabel("Criteria", fontsize=8)
-        ax.set_ylabel("Gewicht (%)", fontsize=8)
+        bars = ax.bar(criteria_names, weights, width=0.6)
+        ax.set_xlabel("Criteria", fontsize=9, fontweight="normal")
+        ax.set_ylabel("Prioriteiten (%)", fontsize=9, fontweight="normal")
         ax.set_ylim(0,100)
-        ax.tick_params(axis='both', labelsize=8)
+        ax.set_xticklabels(criteria_names, rotation=90, fontsize=8)
+        # Dunnere assenlijnen
+        for spine in ax.spines.values():
+            spine.set_linewidth(0.6)
+        ax.tick_params(axis='both', labelsize=8, width=0.6)
+        # Raster subtiel maken
+        ax.grid(axis='y', linestyle='--', linewidth=0.5, alpha=0.4)
+        ax.set_axisbelow(True)
         for bar in bars:
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width()/2, height, f"{height:.2f}%", ha="center", va="bottom", fontsize=8)
-            
+         
+        plt.tight_layout()    
         st.pyplot(fig, use_container_width=False)
         #st.metric("Group Consistency Ratio (CR)", f"{group_cr * 100:.1f}%")
         
