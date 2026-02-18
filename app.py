@@ -561,25 +561,48 @@ else:
         df_respondents = pd.DataFrame(rows)
         
         def color_row(s):
-            # Alleen de criteria-kolommen, niet Respondent of CR
-            crit_vals = s[criteria].values.astype(float)
-            norm = (crit_vals - crit_vals.min()) / (crit_vals.max() - crit_vals.min() + 1e-6)  # normaliseer 0-1
+            # Pak alleen de criteria-kolommen, sla Respondent en CR over
+            # -> Strip '%' indien aanwezig en converteer veilig naar float
+            crit_series = s[criteria].astype(str).str.replace('%', '', regex=False)
+            crit_vals = pd.to_numeric(crit_series.str.replace(',', '.'), errors='coerce').values
+        
+            # Vang rijen met NaN op (bijv. als er iets mis is gegaan met parsing)
+            if np.all(np.isnan(crit_vals)):
+                # Geen kleuring mogelijk, return lege styles
+                return [''] + [''] * len(criteria) + ['']
+        
+            # Normaliseer 0-1 met beveiliging tegen deling door 0
+            vmin = np.nanmin(crit_vals)
+            vmax = np.nanmax(crit_vals)
+            denom = (vmax - vmin) if (vmax - vmin) > 0 else 1.0
+            norm = (crit_vals - vmin) / denom
+        
             colors = [f'background-color: rgba({int((1-x)*255)}, {int(x*255)}, 0, 0.5)' for x in norm]
             # Voeg blanco voor Respondent en CR
             return [''] + colors + ['']
         
-        # Eerst: zet criteria-kolommen om naar 1 decimaal + %
+        # 1) Toon percentages met 1 decimaal + % (als strings)
         df_respondents_fmt = df_respondents.copy()
         for crit in criteria:
             df_respondents_fmt[crit] = df_respondents_fmt[crit].map(lambda x: f"{x:.1f}%")
         
-        # CR omzetten naar 2 decimalen
+        # 2) CR met 2 decimalen
         df_respondents_fmt["CR"] = df_respondents_fmt["CR"].map(lambda x: f"{x:.2f}")
         
-        # Daarna stylen (alleen kleuren)
+        # 3) Daarna stylen (alleen kleuren)
         styled_df = df_respondents_fmt.style.apply(color_row, axis=1)
         
+        # Render
         st.write(styled_df)
+        
+        # def color_row(s):
+        #     # Alleen de criteria-kolommen, niet Respondent of CR
+        #     crit_vals = s[criteria].values.astype(float)
+        #     norm = (crit_vals - crit_vals.min()) / (crit_vals.max() - crit_vals.min() + 1e-6)  # normaliseer 0-1
+        #     colors = [f'background-color: rgba({int((1-x)*255)}, {int(x*255)}, 0, 0.5)' for x in norm]
+        #     # Voeg blanco voor Respondent en CR
+        #     return [''] + colors + ['']
+        
         # # Styling: Prioriteiten als percentage + CR 1 decimaal
         # styled_df = (df_respondents.style.apply(color_row, axis=1).format({crit: "{:.1f}%" for crit in criteria}).format({"CR": "{:.2f}"}))
         # #st.dataframe(styled_df, use_container_width=True)
