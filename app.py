@@ -590,7 +590,9 @@ else:
         df_respondents_fmt["CR"] = df_respondents_fmt["CR"].map(lambda x: f"{x:.2f}")
         
         # 3) Daarna stylen (alleen kleuren)
-        styled_df = df_respondents_fmt.style.apply(color_row, axis=1)
+        # styled_df = df_respondents_fmt.style.apply(color_row, axis=1)
+        # Gebruik een colormap i.p.v. handmatige kleuren
+        styled_df = df_respondents_fmt.style.background_gradient(cmap="Greens", subset=criteria)
         
         # Render
         st.write(styled_df)
