@@ -537,7 +537,39 @@ else:
         st.write(f"Interpretatie consensus: {interpret(consensus)}")
         st.progress(consensus)
         
-    
+        st.subheader("Gedetailleerde prioriteiten per respondent")
+
+        # Groepsresultaat eerste rij
+        group_row = {"Respondent": "Groep"}
+        for i, crit in enumerate(criteria):
+            group_row[crit] = wg[i]
+        group_row["CR"] = group_cr
+        
+        # Rijen voor individuele respondenten
+        rows = [group_row]
+        for f in files:
+            df = pd.read_csv(os.path.join(RESP_DIR, f), index_col=0)
+            w = weights_colmean(df.values)
+            cr = saaty_cr(df.values, w) if n <= 10 else alo_cr(df.values)
+            row = {"Respondent": f}
+            for i, crit in enumerate(criteria):
+                row[crit] = w[i]
+            row["CR"] = cr
+            rows.append(row)
+        
+        # Maak dataframe
+        df_respondents = pd.DataFrame(rows)
+        
+        # Styling: Prioriteiten als percentage + CR 1 decimaal
+        styled_df = (
+            df_respondents.style
+            .format({crit: "{:.1f}%" for crit in criteria})
+            .format({"CR": "{:.2f}"})
+        )
+        
+        st.dataframe(styled_df, use_container_width=True)
+
+
         # Export knoppen
         st.markdown("---")
         colA, colB, colC = st.columns(3)
