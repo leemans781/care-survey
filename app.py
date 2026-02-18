@@ -568,10 +568,22 @@ else:
             # Voeg blanco voor Respondent en CR
             return [''] + colors + ['']
         
-        # Styling: Prioriteiten als percentage + CR 1 decimaal
-        styled_df = (df_respondents.style.apply(color_row, axis=1).format({crit: "{:.1f}%" for crit in criteria}).format({"CR": "{:.2f}"}))
-        #st.dataframe(styled_df, use_container_width=True)
+        # Eerst: zet criteria-kolommen om naar 1 decimaal + %
+        df_respondents_fmt = df_respondents.copy()
+        for crit in criteria:
+            df_respondents_fmt[crit] = df_respondents_fmt[crit].map(lambda x: f"{x:.1f}%")
+        
+        # CR omzetten naar 2 decimalen
+        df_respondents_fmt["CR"] = df_respondents_fmt["CR"].map(lambda x: f"{x:.2f}")
+        
+        # Daarna stylen (alleen kleuren)
+        styled_df = df_respondents_fmt.style.apply(color_row, axis=1)
+        
         st.write(styled_df)
+        # # Styling: Prioriteiten als percentage + CR 1 decimaal
+        # styled_df = (df_respondents.style.apply(color_row, axis=1).format({crit: "{:.1f}%" for crit in criteria}).format({"CR": "{:.2f}"}))
+        # #st.dataframe(styled_df, use_container_width=True)
+        # st.write(styled_df)
 
         # Export knoppen
         st.markdown("---")
