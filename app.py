@@ -436,6 +436,18 @@ else:
         # Inzendingen laden
         files = [f for f in os.listdir(RESP_DIR) if f.endswith(".csv")]
         st.write(f"Gevonden inzendingen: **{len(files)}**")
+        
+        #Filter respondenten via multiselect
+        selected_respondents = st.multiselect(
+            "Selecteer respondenten om mee te nemen",
+            options=files,
+            default=files
+        )
+        files = [f for f in files if f in selected_respondents]
+        if not files:
+            st.warning("Geen respondenten geselecteerd. Selecteer minstens één respondent.")
+            st.stop()
+    
         matrices = []
         bad_files = []
         for f in files:
@@ -457,22 +469,6 @@ else:
             st.stop()
     
     
-        # --- Stap 0: Filter respondenten ---
-        all_respondents = [f for f in files]
-        
-        # Multiselect om respondenten te kiezen
-        selected_respondents = st.multiselect(
-            "Selecteer respondenten om mee te nemen",
-            options=all_respondents,
-            default=all_respondents  # standaard alles selecteren
-        )
-        
-        # Filter files voor de geselecteerde respondenten
-        files = [f for f in files if f in selected_respondents]
-        if not files:
-            st.warning("Geen respondenten geselecteerd. Selecteer minstens één respondent.")
-            st.stop()
-
         # Consolidated decision matrix via AIJ
         G = consolidate_matrices(matrices)
         # st.write("**Consolidated Decision Matrix (groep)**")
