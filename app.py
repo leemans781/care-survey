@@ -569,7 +569,7 @@ else:
             return [''] + colors + ['']
         
         # Styling: Prioriteiten als percentage + CR 1 decimaal
-        styled_df = (df_respondents.style.background_gradient(subset=criteria, cmap="RdYlGn", vmin=0, vmax=100).format({crit: "{:.1f}%" for crit in criteria}).format({"CR": "{:.2f}"}))
+        styled_df = (df_respondents.style.apply(color_row, axis=1).format({crit: "{:.1f}%" for crit in criteria}).format({"CR": "{:.2f}"}))
         st.dataframe(styled_df, use_container_width=True)
 
 
