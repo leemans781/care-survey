@@ -475,15 +475,13 @@ else:
             "Prioriteiten": (wg * 100).round(2)
         })
         
-        
-        # Sorteren van hoog naar laag (optioneel maar meestal gewenst bij AHP)
-        df_grp = df_grp.sort_values("Prioriteiten", ascending=False).reset_index(drop=True)
+        # Rang bepalen (hoogste prioriteit = rank 1)
+        df_grp["Rank"] = df_grp["Prioriteiten"].rank(ascending=False,method="dense").astype(int)
+        # Sorteren op rank (dus hoogste bovenaan)
+        df_grp = df_grp.sort_values("Rank").reset_index(drop=True)
         
         # Styling: rood (laag) -> groen (hoog)
-        styled_df = df_grp.style.background_gradient(
-            subset=["Prioriteiten"],
-            cmap="RdYlGn"   # Rood-Geel-Groen kleurenschaal
-        )
+        styled_df = df_grp.style.background_gradient(subset=["Prioriteiten"],cmap="viridis", vmin=0, vmax=100)
         
         st.dataframe(styled_df, use_container_width=True)
         # # Rang bepalen
@@ -493,7 +491,7 @@ else:
         # Visualisatie (bar plot)
         fig, ax = plt.subplots(figsize=(4,2), dpi=80)
         criteria_names = df_grp["Criteria"]
-        weights = df_grp["Weight (%)"]
+        weights = df_grp["Prioriteiten"]
         bars = ax.bar(criteria_names, weights)
         ax.set_xlabel("Criteria", fontsize=8)
         ax.set_ylabel("Gewicht (%)", fontsize=8)
