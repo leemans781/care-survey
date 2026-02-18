@@ -581,6 +581,8 @@ else:
             # Voeg blanco voor Respondent en CR
             return [''] + colors + ['']
         
+        
+        df_num = df_respondents[criteria].copy()
         # 1) Toon percentages met 1 decimaal + % (als strings)
         df_respondents_fmt = df_respondents.copy()
         for crit in criteria:
@@ -592,7 +594,7 @@ else:
         # 3) Daarna stylen (alleen kleuren)
         # styled_df = df_respondents_fmt.style.apply(color_row, axis=1)
         # Gebruik een colormap i.p.v. handmatige kleuren
-        styled_df = df_respondents_fmt.style.background_gradient(cmap="Greens", subset=criteria)
+        styled_df = df_respondents_fmt.style.background_gradient(cmap="Greens", subset=criteria, gmap=df_num)
         
         # Render
         st.write(styled_df)
