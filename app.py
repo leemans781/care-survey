@@ -542,7 +542,7 @@ else:
         # Groepsresultaat eerste rij
         group_row = {"Respondent": "Groep"}
         for i, crit in enumerate(criteria):
-            group_row[crit] = wg[i]
+            group_row[crit] = wg[i] * 100
         group_row["CR"] = group_cr
         
         # Rijen voor individuele respondenten
@@ -553,7 +553,7 @@ else:
             cr = saaty_cr(df.values, w) if n <= 10 else alo_cr(df.values)
             row = {"Respondent": f}
             for i, crit in enumerate(criteria):
-                row[crit] = w[i]
+                row[crit] = w[i] * 100
             row["CR"] = cr
             rows.append(row)
         
@@ -569,7 +569,7 @@ else:
             return [''] + colors + ['']
         
         # Styling: Prioriteiten als percentage + CR 1 decimaal
-        styled_df = (df_respondents.style.apply(color_row, axis=1).format({crit: "{:.1f}%" for crit in criteria}).format({"CR": "{:.2f}"}))
+        styled_df = (df_respondents.style.background_gradient(subset=criteria, cmap="RdYlGn", vmin=0, vmax=100).format({crit: "{:.1f}%" for crit in criteria}).format({"CR": "{:.2f}"}))
         st.dataframe(styled_df, use_container_width=True)
 
 
