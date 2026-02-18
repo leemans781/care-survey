@@ -560,6 +560,7 @@ else:
         # Maak dataframe
         df_respondents = pd.DataFrame(rows)
         
+        
         def color_row(s):
             # Pak alleen de criteria-kolommen, sla Respondent en CR over
             # -> Strip '%' indien aanwezig en converteer veilig naar float
@@ -581,8 +582,6 @@ else:
             # Voeg blanco voor Respondent en CR
             return [''] + colors + ['']
         
-        
-        df_num = df_respondents[criteria].copy()
         # 1) Toon percentages met 1 decimaal + % (als strings)
         df_respondents_fmt = df_respondents.copy()
         for crit in criteria:
@@ -592,9 +591,7 @@ else:
         df_respondents_fmt["CR"] = df_respondents_fmt["CR"].map(lambda x: f"{x:.2f}")
         
         # 3) Daarna stylen (alleen kleuren)
-        # styled_df = df_respondents_fmt.style.apply(color_row, axis=1)
-        # Gebruik een colormap i.p.v. handmatige kleuren
-        styled_df = df_respondents_fmt.style.background_gradient(cmap="Greens", subset=criteria, gmap=df_num)
+        styled_df = df_respondents_fmt.style.apply(color_row, axis=1)
         
         # Render
         st.write(styled_df)
