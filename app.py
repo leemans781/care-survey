@@ -469,14 +469,26 @@ else:
         group_cr = saaty_cr(G, wg) if n <= 10 else alo_cr(G)
     
         # Overzichtstabel
-        st.subheader("Groepsprioriteiten")
+        st.subheader("Hierarchie met samengevoegde prioriteiten")
         df_grp = pd.DataFrame({
             "Criteria": criteria,
-            "Weight (%)": (wg * 100).round(2)
+            "Prioriteiten": (wg * 100).round(2)
         })
-        # Rang bepalen
-        df_grp["Rank"] = df_grp["Weight (%)"].rank(ascending=False, method="dense").astype(int)
-        st.write(df_grp)
+        
+        
+        # Sorteren van hoog naar laag (optioneel maar meestal gewenst bij AHP)
+        df_grp = df_grp.sort_values("Prioriteiten", ascending=False).reset_index(drop=True)
+        
+        # Styling: rood (laag) -> groen (hoog)
+        styled_df = df_grp.style.background_gradient(
+            subset=["Prioriteiten"],
+            cmap="RdYlGn"   # Rood-Geel-Groen kleurenschaal
+        )
+        
+        st.dataframe(styled_df, use_container_width=True)
+        # # Rang bepalen
+        # df_grp["Rank"] = df_grp["Weight (%)"].rank(ascending=False, method="dense").astype(int)
+        # st.write(df_grp)
         
         # Visualisatie (bar plot)
         fig, ax = plt.subplots(figsize=(4,2), dpi=80)
@@ -673,6 +685,7 @@ else:
             ax.text(bar.get_x() + bar.get_width() / 2, height, f"{height:.1f}%", ha="center", va="bottom", fontsize=8)
             
         st.pyplot(fig, use_container_width=False)
+        
         # Downloadknoppen
         st.markdown("---")
         colA, colB, colC, colD = st.columns(4)
