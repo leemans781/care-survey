@@ -432,7 +432,7 @@ else:
     tabs = st.tabs(["Criteria", "Alternatieven"])
     with tabs[0]:
         st.subheader("Criteria — groepsresultaten")
-        # Lees alle responses die overeenkomen met deze criteria-dimensie (n x n)
+        # Inzendingen laden
         files = [f for f in os.listdir(RESP_DIR) if f.endswith(".csv")]
         st.write(f"Gevonden inzendingen: **{len(files)}**")
         matrices = []
@@ -441,12 +441,9 @@ else:
             path = os.path.join(RESP_DIR, f)
             try:
                 df = pd.read_csv(path, index_col=0)
-                # controle: zelfde dimensie en zelfde criteria set?
                 if df.shape != (n, n):
                     bad_files.append(f"{f} (dimensie {df.shape}, verwacht {(n,n)})")
                     continue
-                # optioneel: check index/kolomnamen gelijk aan criteria
-                # Bij afwijkende namen kun je alleen op dimensie matchen in MVP
                 A = df.values.astype(float)
                 matrices.append(A)
             except Exception as e:
@@ -454,40 +451,27 @@ else:
     
         if bad_files:
             st.warning("Sommige files konden niet gebruikt worden:\n- " + "\n- ".join(bad_files))
-    
         if not matrices:
             st.info("Geen bruikbare responses gevonden in de map 'responses/'.")
             st.stop()
     
         # Consolidated decision matrix via AIJ
         G = consolidate_matrices(matrices)
-        st.write("**Consolidated Decision Matrix (groep)**")
-        st.dataframe(pd.DataFrame(G, columns=criteria, index=criteria))
+        # st.write("**Consolidated Decision Matrix (groep)**")
+        # st.dataframe(pd.DataFrame(G, columns=criteria, index=criteria))
     
         # Groepsgewichten + CR
         wg = weights_colmean(G)
         group_cr = saaty_cr(G, wg) if n <= 10 else alo_cr(G)
     
-        # Overzichtstabel
+        # Overzichtstabel (Hierachie met samengevoegde prioriteiten)
         st.subheader("Hierarchie met samengevoegde prioriteiten")
-        df_grp = pd.DataFrame({
-            "Criteria": criteria,
-            "Prioriteiten": wg * 100})
-        
-        # Rang bepalen (hoogste prioriteit = rank 1)
-        df_grp["Rank"] = df_grp["Prioriteiten"].rank(ascending=False,method="dense").astype(int)
-        # Sorteren op rank (dus hoogste bovenaan)
-        df_grp = df_grp.sort_values("Rank").reset_index(drop=True)
-        
-        # Styling: rood (laag) -> groen (hoog)
+        df_grp = pd.DataFrame({"Criteria": criteria,"Prioriteiten": wg * 100})
         styled_df = (df_grp.style.background_gradient(subset=["Prioriteiten"],cmap="Greens", vmin=0, vmax=100).format({"Prioriteiten": "{:.1f}%"}))
-        
         st.dataframe(styled_df, use_container_width=True)
-        # # Rang bepalen
-        # df_grp["Rank"] = df_grp["Weight (%)"].rank(ascending=False, method="dense").astype(int)
-        # st.write(df_grp)
         
-        # Visualisatie (bar plot)
+        # Staafdiagram
+        st.subheader("Samengevoegde globale prioriteiten")
         plt.style.use("default")  # voorkomt zware styles
         fig, ax = plt.subplots(figsize=(5,3), dpi=120)
         criteria_names = df_grp["Criteria"]
@@ -512,6 +496,19 @@ else:
         st.pyplot(fig, use_container_width=False)
         #st.metric("Group Consistency Ratio (CR)", f"{group_cr * 100:.1f}%")
         
+        # Uitvouwbaar tabje voor meer detail van de resultaten
+        with st.expander("Uitsplitsing verdeling"):
+            st.write("**Consolidated priorities (per criteria)**")
+            df_consolidated = pd.DataFrame({"Criteria": criteria,"Prioriteiten": wg * 100})
+            df_consolidated["Rank"] = df_consolidated["Prioriteiten"].rank(ascending=False, method="dense").astype(int)
+            df_consolidated = df_consolidated.sort_values("Rank").reset_index(drop=True)
+            styled_consolidated = (df_consolidated.style.background_gradient(subset=["Rank"], cmap="Greens", vmin=1, vmax=df_consolidated["Rank"].max()).format({"Prioriteiten": "{:.1f}%"}))
+            st.dataframe(styled_consolidated, use_container_width=True)
+            
+            st.write("**Consolidated Decision Matrix**")
+            st.dataframe(pd.DataFrame(G, columns=criteria, index=criteria), use_container_width=True)
+
+        
         # Bereken homogeniteit en consensus
         priorities_list = []
         for f in files:
@@ -524,7 +521,9 @@ else:
         
         st.subheader("Groepshomogeniteit & Consensus")
         st.metric("Homogeniteit (S)", f"{homogeneity:.3f}")
+        st.progress(homogeneity)
         st.metric("Consensus (S*)", f"{consensus:.3f}")
+        st.progress(consensus)
         
         # Interpretatie
         def interpret(value):
@@ -536,9 +535,7 @@ else:
                 return "Laag"
         
         st.write(f"Interpretatie homogeniteit: {interpret(homogeneity)}")
-        st.progress(homogeneity)
         st.write(f"Interpretatie consensus: {interpret(consensus)}")
-        st.progress(consensus)
     
         # Export knoppen
         st.markdown("---")
