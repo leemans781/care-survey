@@ -472,8 +472,7 @@ else:
         st.subheader("Hierarchie met samengevoegde prioriteiten")
         df_grp = pd.DataFrame({
             "Criteria": criteria,
-            "Prioriteiten": (wg * 100).round(2)
-        })
+            "Prioriteiten": wg * 100})
         
         # Rang bepalen (hoogste prioriteit = rank 1)
         df_grp["Rank"] = df_grp["Prioriteiten"].rank(ascending=False,method="dense").astype(int)
@@ -481,7 +480,7 @@ else:
         df_grp = df_grp.sort_values("Rank").reset_index(drop=True)
         
         # Styling: rood (laag) -> groen (hoog)
-        styled_df = df_grp.style.background_gradient(subset=["Prioriteiten"],cmap="viridis", vmin=0, vmax=100)
+        styled_df = (df_grp.style.background_gradient(subset=["Prioriteiten"],cmap="Greens", vmin=0, vmax=100).format({"Prioriteiten": "{:.1f}%"}))
         
         st.dataframe(styled_df, use_container_width=True)
         # # Rang bepalen
