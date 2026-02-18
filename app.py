@@ -500,9 +500,9 @@ else:
         with st.expander("Uitsplitsing verdeling"):
             st.write("**Consolidated priorities (per criteria)**")
             df_consolidated = pd.DataFrame({"Criteria": criteria,"Prioriteiten": wg * 100})
-            df_consolidated["Rank"] = df_consolidated["Prioriteiten"].rank(ascending=False, method="dense").astype(int)
-            df_consolidated = df_consolidated.sort_values("Rank").reset_index(drop=True)
-            styled_consolidated = (df_consolidated.style.background_gradient(subset=["Rank"], cmap="Greens", vmin=1, vmax=df_consolidated["Rank"].max()).format({"Prioriteiten": "{:.1f}%"}))
+            df_consolidated["Rang"] = df_consolidated["Prioriteiten"].rank(ascending=False, method="dense").astype(int)
+            df_consolidated = df_consolidated.sort_values("Rang").reset_index(drop=True)
+            styled_consolidated = (df_consolidated.style.background_gradient(subset=["Rang"], cmap="Greens_r", vmin=1, vmax=df_consolidated["Rang"].max()).format({"Prioriteiten": "{:.1f}%"}))
             st.dataframe(styled_consolidated, use_container_width=True)
             
             st.write("**Consolidated Decision Matrix**")
@@ -521,9 +521,7 @@ else:
         
         st.subheader("Groepshomogeniteit & Consensus")
         st.metric("Homogeniteit (S)", f"{homogeneity:.3f}")
-        st.progress(homogeneity)
         st.metric("Consensus (S*)", f"{consensus:.3f}")
-        st.progress(consensus)
         
         # Interpretatie
         def interpret(value):
@@ -535,7 +533,10 @@ else:
                 return "Laag"
         
         st.write(f"Interpretatie homogeniteit: {interpret(homogeneity)}")
+        st.progress(homogeneity)
         st.write(f"Interpretatie consensus: {interpret(consensus)}")
+        st.progress(consensus)
+        
     
         # Export knoppen
         st.markdown("---")
