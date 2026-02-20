@@ -391,6 +391,9 @@ else:
             #st.session_state.criteria_locked = True
             st.success("Criteria opgeslagen.")    
             
+            
+    
+            
     # De volgende stap: alternatieven introduceren. 
     st.markdown("### Alternatieven instellen (alleen admin)")
     alternatives_input = st.text_area("Voer alternatieven in (één per regel)", value="\n".join(st.session_state.alternatives))
